@@ -29,7 +29,7 @@ export default defineConfig({
       fileName: () => 'kvcl.es.js',
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'react-router-dom', 'lucide-react'],
     },
   },
   test: {
