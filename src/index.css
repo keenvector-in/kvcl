@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+/*
+ * kvcl design tokens — kept in sync with keenvector-web's src/index.css by hand.
+ * Values are taken from the real KeenVector brand (sandesha_prototype-main's
+ * brand/ assets and shadcn-style HSL tokens in its src/index.css, dark-theme
+ * values since kvcl/keenvector-web are dark-first) rather than invented.
+ * Consumers import this file once (see README) to get the shared palette,
+ * typography and shadows every kvcl component is built against.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --color-ink-950: hsl(222 47% 8%);
+  --color-ink-900: hsl(222 39% 11%);
+  --color-ink-800: hsl(217 33% 18%);
+  --color-ink-700: hsl(217 28% 22%);
+  --color-ink-600: hsl(217 30% 16%);
+  --color-ink-500: hsl(215 15% 52%);
+  --color-ink-400: hsl(215 20% 65%);
+  --color-ink-300: hsl(215 20% 72%);
+  --color-ink-200: hsl(210 30% 85%);
+  --color-ink-100: hsl(210 40% 96%);
+  --color-ink-50: hsl(210 40% 98%);
+
+  /* brand hue (indigo) at hsl(239 84% *) — 60% is the real primary from the brand tokens */
+  --color-brand-950: hsl(239 84% 25%);
+  --color-brand-900: hsl(239 84% 32%);
+  --color-brand-800: hsl(239 84% 40%);
+  --color-brand-700: hsl(239 84% 48%);
+  --color-brand-600: hsl(239 84% 55%);
+  --color-brand-500: hsl(239 84% 60%);
+  --color-brand-400: hsl(239 84% 70%);
+  --color-brand-300: hsl(239 90% 78%);
+  --color-brand-200: hsl(239 90% 88%);
+  --color-brand-100: hsl(239 90% 94%);
+  --color-brand-50: hsl(239 90% 97%);
+
+  /* teal accent — exact hex from the logo mark's connection strokes */
+  --color-accent-600: #0d9488;
+  --color-accent-500: #14b8a6;
+  --color-accent-400: #2dd4bf;
+
+  /* the logo's own blue → indigo → violet gradient stops, for CTAs */
+  --color-logo-from: #2563eb;
+  --color-logo-via: #4f46e5;
+  --color-logo-to: #7c3aed;
+
+  --shadow-soft: 0 1px 2px rgba(15, 20, 36, 0.04), 0 8px 24px -8px rgba(15, 20, 36, 0.12);
+  --shadow-card: 0 1px 1px rgba(15, 20, 36, 0.04), 0 16px 40px -12px rgba(79, 70, 229, 0.2);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3, h4 {
+  letter-spacing: -0.01em;
+}

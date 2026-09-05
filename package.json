@@ -1,0 +1,66 @@
+{
+  "name": "@keenvector/kvcl",
+  "description": "KeenVector Component Library — shared, typed React + Tailwind components for KeenVector frontends.",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./dist/kvcl.es.js",
+  "module": "./dist/kvcl.es.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": [
+    "*.css"
+  ],
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/kvcl.es.js"
+    },
+    "./styles.css": "./dist/kvcl.css"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "test": "vitest run --project=unit",
+    "test:watch": "vitest --project=unit",
+    "test:storybook": "vitest run --project=storybook",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "@chromatic-com/storybook": "latest",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-mcp": "^10.6.0",
+    "@storybook/addon-vitest": "^10.6.0",
+    "@storybook/react-vite": "^10.6.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "@vitest/browser-playwright": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
+    "jsdom": "^29.1.1",
+    "oxlint": "^1.79.0",
+    "playwright": "latest",
+    "storybook": "^10.6.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2",
+    "vite-plugin-dts": "^5.1.0",
+    "vitest": "^4.1.11"
+  }
+}
