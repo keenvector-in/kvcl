@@ -33,3 +33,39 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 });
+
+describe('Button (merged KeenPlaza props)', () => {
+  it('is disabled and busy while loading, and does not fire onClick', async () => {
+    const onClick = vi.fn();
+    render(
+      <Button onClick={onClick} loading>
+        Saving
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Saving' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    await userEvent.click(button);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('renders the icon when not loading and hides it while loading', () => {
+    const { rerender } = render(<Button icon={<span data-testid="icon" />}>Add</Button>);
+    expect(screen.getByTestId('icon')).toBeInTheDocument();
+    rerender(
+      <Button icon={<span data-testid="icon" />} loading>
+        Add
+      </Button>,
+    );
+    expect(screen.queryByTestId('icon')).not.toBeInTheDocument();
+  });
+
+  it('stretches with `block` and renders every variant', () => {
+    render(
+      <Button block variant="danger">
+        Cancel
+      </Button>,
+    );
+    expect(screen.getByRole('button').className).toContain('w-full');
+  });
+});

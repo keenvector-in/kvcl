@@ -9,3 +9,6 @@ import { Badge } from '@keenvector/kvcl';
 <Badge tone="accent">Connected</Badge>
 <Badge tone="warning">Configuration required</Badge>
 ```
+
+Tones: `neutral` (default), `brand`/`primary`, `accent`, `warning`, `success`,
+`danger`/`error`, `info`. Pass `dot` for a leading dot in the tone's colour.

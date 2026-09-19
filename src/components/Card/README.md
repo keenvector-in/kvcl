@@ -13,3 +13,13 @@ import { Card } from '@keenvector/kvcl';
 ```
 
 Accepts every `HTMLAttributes<HTMLDivElement>` prop in addition to `className`.
+
+Pass `title` (and optionally `actions`) for a bordered header row, and `padded={false}`
+for edge-to-edge content such as a table.
+
+## Overriding styles
+
+`className` is appended, but Tailwind resolves conflicts by stylesheet order, not attribute order:
+passing a utility from a group the component already sets (a background, a border colour, padding)
+may silently lose. Render your own element, or ask for a prop, instead of fighting it — `StatCard`'s
+accent tile does the former.

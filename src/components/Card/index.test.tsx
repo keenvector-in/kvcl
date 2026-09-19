@@ -12,4 +12,25 @@ describe('Card', () => {
     render(<Card className="w-80">content</Card>);
     expect(screen.getByText('content')).toHaveClass('w-80', 'rounded-2xl');
   });
+
+  it('renders a header row with title and actions', () => {
+    render(
+      <Card title="Payments" actions={<button type="button">Edit</button>}>
+        body
+      </Card>,
+    );
+    expect(screen.getByRole('heading', { name: 'Payments' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByText('body')).toBeInTheDocument();
+  });
+
+  it('drops the inner padding with padded={false}', () => {
+    render(
+      <Card padded={false} className="flush">
+        content
+      </Card>,
+    );
+    expect(screen.getByText('content').className).not.toContain('p-6');
+  });
 });
+

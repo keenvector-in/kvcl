@@ -20,3 +20,20 @@ export const Default: Story = {
     </Card>
   ),
 };
+
+export const Titled: Story = {
+  render: () => (
+    <Card className="w-96" title="Payments" actions={<button className="text-xs text-brand-500">Edit</button>}>
+      <p className="text-sm text-fg-muted">Razorpay connected — live keys.</p>
+    </Card>
+  ),
+};
+
+export const Flush: Story = {
+  render: () => (
+    <Card className="w-96" padded={false}>
+      <div className="border-b border-line px-4 py-3 text-sm text-fg">Edge-to-edge content</div>
+      <div className="px-4 py-3 text-sm text-fg-muted">No inner padding.</div>
+    </Card>
+  ),
+};

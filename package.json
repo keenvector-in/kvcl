@@ -1,6 +1,6 @@
 {
   "name": "@keenvector/kvcl",
-  "description": "KeenVector Component Library — shared, typed React + Tailwind components for KeenVector frontends.",
+  "description": "kvcl — the shared React component library for KeenVector and KeenPlaza frontends.",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -11,14 +11,16 @@
     "*.css"
   ],
   "files": [
-    "dist"
+    "dist",
+    "src/theme.css"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/kvcl.es.js"
     },
-    "./styles.css": "./dist/kvcl.css"
+    "./styles.css": "./dist/kvcl.css",
+    "./theme.css": "./src/theme.css"
   },
   "scripts": {
     "dev": "vite",
@@ -31,16 +33,14 @@
     "build-storybook": "storybook build"
   },
   "peerDependencies": {
+    "@xyflow/react": "^12.0.0",
+    "lucide-react": "^1.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.0.0",
-    "lucide-react": "^1.0.0"
+    "motion": "^12.0.0"
   },
   "devDependencies": {
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "react-router-dom": "^7.18.3",
-    "lucide-react": "^1.41.0",
     "@chromatic-com/storybook": "latest",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/addon-docs": "^10.6.0",
@@ -57,14 +57,37 @@
     "@vitejs/plugin-react": "^6.1.0",
     "@vitest/browser-playwright": "4.1.11",
     "@vitest/coverage-v8": "4.1.11",
+    "@xyflow/react": "^12.11.6",
     "jsdom": "^29.1.1",
+    "lucide-react": "^1.41.0",
+    "motion": "^12.43.0",
     "oxlint": "^1.79.0",
     "playwright": "latest",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-router-dom": "^7.18.3",
     "storybook": "^10.6.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vite-plugin-dts": "^5.1.0",
     "vitest": "^4.1.11"
+  },
+  "peerDependenciesMeta": {
+    "@xyflow/react": {
+      "optional": true
+    },
+    "lucide-react": {
+      "optional": true
+    },
+    "react-router-dom": {
+      "optional": true
+    },
+    "motion": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   }
 }

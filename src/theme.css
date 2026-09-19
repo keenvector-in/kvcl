@@ -1,0 +1,219 @@
+/*
+ * kvcl design tokens — the single source every KeenVector frontend imports
+ * (`@import "@keenvector/kvcl/theme.css"` after `@import "tailwindcss"`), so
+ * portals stop keeping hand-synced copies.
+ *
+ * Values come from the real KeenVector brand (sandesha prototype's brand/
+ * assets and HSL tokens). Utilities read these as CSS variables at runtime,
+ * which is what lets <ThemeProvider> re-skin a subtree per tenant: it sets
+ * --kv-brand / --kv-accent and the scale below follows via color-mix.
+ */
+/* `dark:` utilities follow the same switch as the tokens — the data-kv-mode
+ * attribute a console or ThemeProvider sets — never the OS preference alone. */
+@custom-variant dark (&:where([data-kv-mode="dark"], [data-kv-mode="dark"] *));
+
+@theme {
+
+  --color-ink-950: hsl(222 47% 8%);
+  --color-ink-900: hsl(222 39% 11%);
+  --color-ink-800: hsl(217 33% 18%);
+  --color-ink-700: hsl(217 28% 22%);
+  --color-ink-600: hsl(217 30% 16%);
+  --color-ink-500: hsl(215 15% 52%);
+  --color-ink-400: hsl(215 20% 65%);
+  --color-ink-300: hsl(215 20% 72%);
+  --color-ink-200: hsl(210 30% 85%);
+  --color-ink-100: hsl(210 40% 96%);
+  --color-ink-50: hsl(210 40% 98%);
+
+}
+
+/* Inlined (not emitted as :root vars) so each utility evaluates var(--kv-*)
+ * on the element itself — that is what makes a <ThemeProvider> subtree or a
+ * [data-kv-mode] island pick up its own values. */
+@theme inline {
+  --font-sans: var(--kv-font, "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif);
+  --font-display: var(--kv-font-display, var(--kv-font, "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif));
+
+  /* Brand scale derived from one base colour — hsl(239 84% 60%) is the real
+   * KeenVector primary; a tenant theme swaps --kv-brand only. */
+  --color-brand-950: var(--kv-brand-950, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 45%, black));
+  --color-brand-900: var(--kv-brand-900, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 58%, black));
+  --color-brand-800: var(--kv-brand-800, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 70%, black));
+  --color-brand-700: var(--kv-brand-700, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 82%, black));
+  --color-brand-600: var(--kv-brand-600, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 92%, black));
+  --color-brand-500: var(--kv-brand, hsl(239 84% 60%));
+  --color-brand-400: var(--kv-brand-400, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 75%, white));
+  --color-brand-300: var(--kv-brand-300, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 58%, white));
+  --color-brand-200: var(--kv-brand-200, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 38%, white));
+  --color-brand-100: var(--kv-brand-100, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 20%, white));
+  --color-brand-50: var(--kv-brand-50, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 8%, white));
+
+  /* teal accent — exact hex from the logo mark's connection strokes */
+  --color-accent-600: color-mix(in oklab, var(--kv-accent, #14b8a6) 85%, black);
+  --color-accent-500: var(--kv-accent, #14b8a6);
+  --color-accent-400: color-mix(in oklab, var(--kv-accent, #14b8a6) 80%, white);
+  --color-accent-200: color-mix(in oklab, var(--kv-accent, #14b8a6) 40%, white);
+
+  /* CTA gradient: the logo's blue → indigo → violet by default, the tenant's
+   * brand colour when themed. */
+  --color-logo-from: var(--kv-gradient-from, #2563eb);
+  --color-logo-via: var(--kv-gradient-via, #4f46e5);
+  --color-logo-to: var(--kv-gradient-to, #7c3aed);
+
+  /* Semantic surface tokens — components use these (not white/ink literals)
+   * so the same component renders on a dark or a light page. Dark defaults;
+   * [data-kv-mode="light"] below flips them. */
+  /* Readable text on a brand-filled surface (a store theme can flip it). */
+  --color-on-brand: var(--kv-on-brand, #ffffff);
+  --color-fg: var(--kv-fg, #ffffff);
+  --color-fg-muted: var(--kv-fg-muted, hsl(215 20% 72%));
+  --color-fg-subtle: var(--kv-fg-subtle, hsl(215 20% 65%));
+  --color-surface: var(--kv-surface, rgb(255 255 255 / 0.03));
+  --color-line: var(--kv-line, rgb(255 255 255 / 0.1));
+  --color-page: var(--kv-page, hsl(222 47% 8%));
+
+  /* Surfaces a dense console needs beyond page/surface: a raised panel and a
+   * sunken well, plus a stronger line for table and input borders. */
+  --color-surface-2: var(--kv-surface-2, rgb(255 255 255 / 0.06));
+  --color-sunken: var(--kv-sunken, rgb(0 0 0 / 0.2));
+  --color-line-strong: var(--kv-line-strong, rgb(255 255 255 / 0.18));
+
+  /* The admin sidebar rail: dark ink in both modes (prototype admin.css), so
+   * it stays the anchor of the console instead of flipping with the page. */
+  --color-rail: var(--kv-rail, #141428);
+  --color-rail-fg: var(--kv-rail-fg, rgb(255 255 255 / 0.72));
+  --color-rail-line: var(--kv-rail-line, rgb(255 255 255 / 0.1));
+
+  /* Status. `-soft` is the tinted background the same status text sits on. */
+  --color-success: var(--kv-success, #12a150);
+  --color-success-soft: var(--kv-success-soft, rgb(18 161 80 / 0.16));
+  --color-warning: var(--kv-warning, #f5a524);
+  --color-warning-soft: var(--kv-warning-soft, rgb(245 165 36 / 0.16));
+  --color-danger: var(--kv-danger, #e5484d);
+  --color-danger-soft: var(--kv-danger-soft, rgb(229 72 77 / 0.16));
+  --color-info: var(--kv-info, #3b82f6);
+  --color-info-soft: var(--kv-info-soft, rgb(59 130 246 / 0.16));
+
+  /* Warm brand colour: KeenVector's amber highlight, KeenPlaza's orange. */
+  --color-warm-500: var(--kv-warm, #f59e0b);
+  --color-warm-soft: var(--kv-warm-soft, rgb(245 158 11 / 0.16));
+
+  /* Loader: each shop bay lights, then hands over to the next. The keyframes have to
+   * sit inside @theme, or Tailwind emits the utility without them. */
+  --animate-kp-lit: kp-lit 1.6s ease-in-out infinite;
+  @keyframes kp-lit {
+    0%, 70%, 100% { fill: #3a239a; }
+    25% { fill: #ff7a2f; }
+  }
+
+  --shadow-soft: 0 1px 2px rgba(15, 20, 36, 0.04), 0 8px 24px -8px rgba(15, 20, 36, 0.12);
+  --shadow-card: 0 1px 1px rgba(15, 20, 36, 0.04), 0 16px 40px -12px color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 25%, transparent);
+}
+
+[data-kv-mode="light"] {
+  --kv-fg: hsl(222 39% 11%);
+  --kv-fg-muted: hsl(215 16% 42%);
+  --kv-fg-subtle: hsl(215 15% 52%);
+  --kv-surface: #ffffff;
+  --kv-surface-2: hsl(210 40% 98%);
+  --kv-sunken: hsl(210 40% 96%);
+  --kv-line: hsl(214 32% 91%);
+  --kv-line-strong: hsl(214 25% 84%);
+  --kv-page: hsl(210 40% 98%);
+  --kv-success-soft: #e3f8ec;
+  --kv-warning-soft: #fff4e0;
+  --kv-danger-soft: #fdeaea;
+  --kv-info-soft: #e8f1ff;
+  --kv-warm-soft: #fff0e6;
+}
+
+/* ---------------------------------------------------------------------------
+ * Brand presets. One attribute on <html> picks the product's colours; every
+ * component reads the tokens above, so nothing else changes between the two.
+ *   <html data-kv-brand="keenplaza" data-kv-mode="dark">
+ * Values come from keenplaza-claude/prototype/css/global.css — the prototype
+ * stays the specification, these tokens reproduce it. */
+[data-kv-brand="keenplaza"] {
+  --kv-font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --kv-brand: #5b3df5;
+  --kv-accent: #0fb5a6;
+  --kv-warm: #ff7a2f;
+  --kv-gradient-from: #5b3df5;
+  --kv-gradient-via: #b14bd8;
+  --kv-gradient-to: #ff7a2f;
+  /* dark surfaces: prototype theme.css */
+  --kv-page: #0d0d18;
+  --kv-surface: #15152a;
+  --kv-surface-2: #1b1b33;
+  --kv-sunken: #101020;
+  --kv-line: #26263f;
+  --kv-line-strong: #33334f;
+  --kv-fg: #f2f2f8;
+  --kv-fg-muted: #a0a0b8;
+  --kv-fg-subtle: #70708c;
+  --kv-success-soft: #10301f;
+  --kv-warning-soft: #332508;
+  --kv-danger-soft: #3a1517;
+  --kv-info-soft: #0f2340;
+  --kv-warm-soft: #331a0a;
+}
+[data-kv-brand="keenplaza"][data-kv-mode="light"] {
+  --kv-page: #f7f7fa;
+  --kv-surface: #ffffff;
+  --kv-surface-2: #fcfcfd;
+  --kv-sunken: #f0f0f5;
+  --kv-line: #e4e4ed;
+  --kv-line-strong: #d1d1de;
+  --kv-fg: #141428;
+  --kv-fg-muted: #71718a;
+  --kv-fg-subtle: #a0a0b3;
+  --kv-success-soft: #e3f8ec;
+  --kv-warning-soft: #fff4e0;
+  --kv-danger-soft: #fdeaea;
+  --kv-info-soft: #e8f1ff;
+  --kv-warm-soft: #fff0e6;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tokens for hand-written CSS.
+ *
+ * The block above is `@theme inline`: Tailwind inlines those values into the
+ * utilities it generates, which is what lets a themed subtree re-skin them —
+ * but it means `--color-*` does not exist as a custom property, so a
+ * stylesheet that writes `background: var(--color-surface)` gets nothing.
+ * This layer declares them for real. Put `kv-scope` on any element that sets
+ * its own `--kv-*` (a storefront root, a tenant preview) and the aliases
+ * resolve against that element's values instead of the document's. */
+:root,
+.kv-scope {
+  --color-brand-500: var(--kv-brand, hsl(239 84% 60%));
+  --color-accent-500: var(--kv-accent, #14b8a6);
+  --color-warm-500: var(--kv-warm, #f59e0b);
+  --color-logo-from: var(--kv-gradient-from, #2563eb);
+  --color-logo-via: var(--kv-gradient-via, #4f46e5);
+  --color-logo-to: var(--kv-gradient-to, #7c3aed);
+  --color-on-brand: var(--kv-on-brand, #ffffff);
+  --color-fg: var(--kv-fg, #ffffff);
+  --color-fg-muted: var(--kv-fg-muted, hsl(215 20% 72%));
+  --color-fg-subtle: var(--kv-fg-subtle, hsl(215 20% 65%));
+  --color-surface: var(--kv-surface, rgb(255 255 255 / 0.03));
+  --color-surface-2: var(--kv-surface-2, rgb(255 255 255 / 0.06));
+  --color-sunken: var(--kv-sunken, rgb(0 0 0 / 0.2));
+  --color-line: var(--kv-line, rgb(255 255 255 / 0.1));
+  --color-line-strong: var(--kv-line-strong, rgb(255 255 255 / 0.18));
+  --color-page: var(--kv-page, hsl(222 47% 8%));
+  --color-rail: var(--kv-rail, #141428);
+  --color-rail-fg: var(--kv-rail-fg, rgb(255 255 255 / 0.72));
+  --color-rail-line: var(--kv-rail-line, rgb(255 255 255 / 0.1));
+  --color-success: var(--kv-success, #12a150);
+  --color-success-soft: var(--kv-success-soft, rgb(18 161 80 / 0.16));
+  --color-warning: var(--kv-warning, #f5a524);
+  --color-warning-soft: var(--kv-warning-soft, rgb(245 165 36 / 0.16));
+  --color-danger: var(--kv-danger, #e5484d);
+  --color-danger-soft: var(--kv-danger-soft, rgb(229 72 77 / 0.16));
+  --color-info: var(--kv-info, #3b82f6);
+  --color-info-soft: var(--kv-info-soft, rgb(59 130 246 / 0.16));
+  --shadow-soft: 0 1px 2px rgba(15, 20, 36, 0.04), 0 8px 24px -8px rgba(15, 20, 36, 0.12);
+  --shadow-card: 0 1px 1px rgba(15, 20, 36, 0.04), 0 16px 40px -12px color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 25%, transparent);
+}
