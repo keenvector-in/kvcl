@@ -17,6 +17,8 @@ export interface SelectProps extends Omit<SelectHTMLAttributes<HTMLSelectElement
   error?: string;
   /** Class for the wrapper. */
   className?: string;
+  /** Sizes to its content instead of filling the row — for a toolbar or a filter bar. */
+  inline?: boolean;
   /** Layout style for the wrapper (width, flex, margin); `{ marginBottom: 0 }` lines it up with a button in a row. */
   style?: CSSProperties;
 }
@@ -30,6 +32,7 @@ export function Select({
   hint,
   error,
   className = '',
+  inline = false,
   style,
   id,
   children,
@@ -41,14 +44,14 @@ export function Select({
     [hint ? `${fieldId}-hint` : '', error ? `${fieldId}-error` : ''].filter(Boolean).join(' ') || undefined;
 
   return (
-    <div className={`mb-3 flex w-full flex-col gap-1.5 ${className}`} style={style}>
+    <div className={`mb-3 flex flex-col gap-1.5 ${inline ? 'w-auto' : 'w-full'} ${className}`} style={style}>
       <label htmlFor={fieldId} className={hideLabel ? 'sr-only' : 'text-[13px] font-semibold text-fg-muted'}>
         {label}
       </label>
       <div className="relative">
         <select
           id={fieldId}
-          className={`h-[42px] w-full appearance-none rounded-lg border bg-surface pl-3 pr-8 text-sm text-fg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${
+          className={`h-[42px] appearance-none rounded-lg border bg-surface pl-3 pr-8 text-sm text-fg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 ${inline ? 'w-auto' : 'w-full'} ${
             error ? 'border-danger' : 'border-line-strong'
           }`}
           aria-invalid={error ? true : undefined}

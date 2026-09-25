@@ -87,10 +87,10 @@ export type { LogoMarkProps, LogoMarkVariant, WordmarkProps } from './components
 export { Loader } from './components/Loader/index';
 export type { LoaderProps } from './components/Loader/index';
 
-export { createHttpClient, setTokens, clearTokens, isLoggedIn } from './api/httpClient';
+export { createHttpClient, setTokens, clearTokens, isLoggedIn, onSessionLost } from './api/httpClient';
 export type { HttpClient, RequestOptions } from './api/httpClient';
-export { identityApi } from './api/identity';
-export type { TokenPair, OtpRequestResponse, Me } from './api/identity';
+export { identityApi, deviceInfo } from './api/identity';
+export type { TokenPair, OtpRequestResponse, ForgotPasswordResponse, Session, Me } from './api/identity';
 export { tenantApi } from './api/tenant';
 export type { Tenant, Store, Membership, FeatureFlag, TenantStatus, MembershipStatus, CallerPermissions, MemberTenant } from './api/tenant';
 export { storefrontApi } from './api/storefront';
@@ -105,8 +105,12 @@ export { cartApi } from './api/cart';
 export type { Cart, CartLine, CartStatus, CartSummary, CartView } from './api/cart';
 export { searchApi } from './api/search';
 export type { SearchHit, FacetCount, SearchResult } from './api/search';
+export { notificationApi, NOTIFY_EVENTS, NOTIFY_PLACEHOLDERS } from './api/notification';
+export type { NotifyTemplate, NotifyDelivery, NotifyChannel, NotifyEvent, DeliveryStatus, Campaign, CampaignStatus } from './api/notification';
+export { mediaApi, mediaSrcSet, mainImage } from './api/media';
+export type { MediaAsset, MediaOwnerType, MediaSize } from './api/media';
 export { customerApi } from './api/customer';
-export type { CustomerProfile, Address, AddressInput, Segment, SegmentFilter } from './api/customer';
+export type { CustomerProfile, Consent, Customer, CustomerDetail, CustomerSort, Address, AddressInput, Segment, SegmentFilter } from './api/customer';
 export { orderApi, logisticsApi, NEXT_ORDER_STATUSES, NEXT_SHIPMENT_STATUSES } from './api/order';
 export type { Order, OrderLine, OrderOffer, OrderStatus, CheckoutInput, OrderStatusChange, OrderPayment, Shipment, ShipmentStatus, TrackingEvent, CourierAccount, BlueDartInput } from './api/order';
 export { platformApi, leadsApi, PLATFORM_FLAGS } from './api/platform';
@@ -138,6 +142,25 @@ export type { DrawerProps } from './components/Drawer/index';
 export { ConfirmDialog } from './components/ConfirmDialog/index';
 export type { ConfirmDialogProps } from './components/ConfirmDialog/index';
 export { InlineStatus } from './components/InlineStatus/index';
+export {
+  PasswordLoginForm,
+  RegisterForm,
+  ForgotPasswordForm,
+  ResetPasswordForm,
+  ChangePasswordForm,
+  LoginDetailsPanel,
+  SessionsList,
+  MIN_PASSWORD_LENGTH,
+} from './components/PasswordAuth/index';
+export type {
+  PasswordLoginFormProps,
+  RegisterFormProps,
+  ForgotPasswordFormProps,
+  ResetPasswordFormProps,
+  ChangePasswordFormProps,
+  LoginDetailsPanelProps,
+  SessionsListProps,
+} from './components/PasswordAuth/index';
 export type { InlineStatusProps, InlineStatusKind } from './components/InlineStatus/index';
 export { Skeleton } from './components/Skeleton/index';
 export type { SkeletonProps } from './components/Skeleton/index';
@@ -163,10 +186,22 @@ export { StockBadge } from './components/StockBadge/index';
 export type { StockBadgeProps, StockBadgeStatus } from './components/StockBadge/index';
 export { PriceTag } from './components/PriceTag/index';
 export type { PriceTagProps } from './components/PriceTag/index';
+export { Timeline } from './components/Timeline/index';
+export type { TimelineProps, TimelineEntry } from './components/Timeline/index';
+export { DescriptionList } from './components/DescriptionList/index';
+export type { DescriptionListProps, DescriptionItem } from './components/DescriptionList/index';
+export { Chip } from './components/Chip/index';
+export type { ChipProps } from './components/Chip/index';
+export { ScrollRail } from './components/ScrollRail/index';
+export type { ScrollRailProps } from './components/ScrollRail/index';
+export { QuantityStepper } from './components/QuantityStepper/index';
+export type { QuantityStepperProps } from './components/QuantityStepper/index';
+export { flyToCart } from './lib/flyToCart';
 export { ProductCard } from './components/ProductCard/index';
 export type { ProductCardProps } from './components/ProductCard/index';
 export { useOverlay } from './hooks/useOverlay';
 export { formatMinor } from './lib/money';
+export * from './lib/validate';
 
 export { componentVersions } from './versions';
 

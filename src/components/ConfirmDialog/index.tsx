@@ -45,7 +45,8 @@ export function ConfirmDialog({
         </>
       }
     >
-      <p className="text-sm text-fg-muted">{message}</p>
+      {/* a div, not a p: callers pass status lines and lists, which cannot nest inside a p */}
+      <div className="text-sm text-fg-muted">{message}</div>
     </Modal>
   );
 }

@@ -1,3 +1,3 @@
 // Bump with every user-visible change to EmptyState and add a CHANGELOG.md entry;
 // versions.test.tsx fails if the two disagree.
-export const version = '1.2.0';
+export const version = '1.3.0';

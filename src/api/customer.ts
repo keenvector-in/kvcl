@@ -9,8 +9,35 @@ export interface CustomerProfile {
   total_spent_minor: number
   first_order_at?: string
   last_order_at?: string
+  consent: Consent
   created_at: string
 }
+
+/**
+ * What the shopper agreed to be sent, per channel. Off until they say otherwise, and only they can
+ * change it — staff never can. Order updates are not covered here: they belong to the order.
+ */
+export interface Consent {
+  email: boolean
+  whatsapp: boolean
+  sms: boolean
+  updated_at?: string
+}
+
+/** One row of the backoffice customer list: the profile plus how to reach them (identity owns those). */
+export interface Customer extends CustomerProfile {
+  phone?: string
+  email?: string
+  segment_ids: string[]
+}
+
+/** One shopper for support: the list row plus where they ship. Their orders come from the order API. */
+export interface CustomerDetail extends Customer {
+  addresses: Address[]
+}
+
+/** How the backoffice list is ordered; the default is whoever bought most recently. */
+export type CustomerSort = 'last_order' | 'spend' | 'orders' | 'newest'
 
 export interface Address {
   id: string
@@ -62,6 +89,20 @@ export function customerApi(http: HttpClient) {
     deleteAddress: (tenantId: string, id: string) => http.request<void>(`/v1/customers/me/addresses/${id}`, { method: 'DELETE', tenantId }),
     setDefaultAddress: (tenantId: string, id: string) =>
       http.request<void>(`/v1/customers/me/addresses/${id}/default`, { method: 'POST', tenantId }),
+
+    /** The shopper's own marketing choices; every channel is sent, so omitting one withdraws it. */
+    setMyConsent: (tenantId: string, consent: { email: boolean; whatsapp: boolean; sms: boolean }) =>
+      http.request<CustomerProfile>('/v1/customers/me/consent', { method: 'PUT', body: consent, tenantId }),
+
+    // Backoffice (customers:view). The list carries phone and e-mail, which identity owns — if identity
+    // is unreachable the rows still come back, just without contact details.
+    listCustomers: (tenantId: string, params: { q?: string; segment?: string; sort?: CustomerSort; limit?: number } = {}) => {
+      const search = new URLSearchParams()
+      for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== '') search.set(k, String(v))
+      const qs = search.toString()
+      return http.request<{ customers: Customer[] }>(`/v1/customers${qs ? `?${qs}` : ''}`, { tenantId })
+    },
+    getCustomer: (tenantId: string, userId: string) => http.request<CustomerDetail>(`/v1/customers/${userId}`, { tenantId }),
 
     listSegments: (tenantId: string) => http.request<{ segments: Segment[] }>('/v1/segments', { tenantId }),
     createSegment: (tenantId: string, name: string, filter: SegmentFilter) =>

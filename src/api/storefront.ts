@@ -11,6 +11,12 @@ export interface StoreContent {
   badges?: string[]
   tiles?: { emoji?: string; title: string; text?: string; link?: string }[]
   rails?: string[] // category ids in display order
+  /** Who the shop is — footer and order page. Empty fields are not rendered at all. */
+  about?: string
+  support?: { phone?: string; email?: string; address?: string; hours?: string }
+  policies?: { returns?: string; shipping?: string; privacy?: string }
+  /** Full https links to the shop's own profiles; the one place off-site links are allowed. */
+  social?: { instagram?: string; facebook?: string; whatsapp?: string; youtube?: string }
 }
 
 // What tenant-web-portal needs to render a store for a hostname (tenancy.md: tenant from hostname).

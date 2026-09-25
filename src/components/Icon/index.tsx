@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import {
-  AlertTriangle, ArrowLeft, Banknote, BarChart3, Bell, Box, Calendar, Check, ChevronDown, ChevronRight,
+  AlertTriangle, ArrowLeft, Banknote,
+  Mail, BarChart3, Bell, Box, Calendar, Check, ChevronDown, ChevronRight,
   Clock, Copy, CreditCard, Download, Eye, FileText, Filter, Globe, Heart, Home, Inbox, Info, Layers,
   LayoutGrid, List, LogOut, MapPin, Menu, Minus, Moon, Palette, Pencil, Percent, Phone, Plus, RefreshCw,
   RotateCw, Search, Settings, Share2, Shield, ShoppingCart, Star, Sun, Tag, Trash2, Truck, Undo2, User,
@@ -21,7 +22,7 @@ const ICONS = {
   share: Share2, refresh: RefreshCw, download: Download, logout: LogOut, layers: Layers, zap: Zap,
   shield: Shield, rotate: RotateCw, sun: Sun, moon: Moon, alert: AlertTriangle, info: Info, inbox: Inbox,
   globe: Globe, card: CreditCard, palette: Palette, file: FileText, list: List, phone: Phone,
-  cash: Banknote, undo: Undo2,
+  cash: Banknote, undo: Undo2, mail: Mail,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

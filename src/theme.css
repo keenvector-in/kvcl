@@ -102,6 +102,10 @@
   /* Loader: each shop bay lights, then hands over to the next. The keyframes have to
    * sit inside @theme, or Tailwind emits the utility without them. */
   --animate-kp-lit: kp-lit 1.6s ease-in-out infinite;
+  @keyframes kv-step {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
   @keyframes kp-lit {
     0%, 70%, 100% { fill: #3a239a; }
     25% { fill: #ff7a2f; }

@@ -97,11 +97,13 @@ export interface Coupon {
   discount_type: 'flat' | 'percent'
   /** percent: 1–100; flat: paise off the cart */
   discount_value: number
-  usage_limit: number
+  /** null = unlimited */
+  usage_limit: number | null
   used_count: number
   per_customer_limit: number
   starts_at: string
-  ends_at: string
+  /** null = no end date */
+  ends_at: string | null
   stackable: boolean
 }
 
@@ -160,9 +162,11 @@ export function pricingApi(http: HttpClient) {
       code: string,
       discountType: 'flat' | 'percent',
       discountValue: number,
+      /** 0 = unlimited */
       usageLimit: number,
       startsAt: string,
-      endsAt: string
+      /** null = no end date */
+      endsAt: string | null
     ) =>
       http.request<Coupon>('/v1/coupons', {
         method: 'POST',

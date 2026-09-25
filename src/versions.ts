@@ -11,8 +11,14 @@ import { version as IconButton } from './components/IconButton/version';
 import { version as InlineStatus } from './components/InlineStatus/version';
 import { version as Modal } from './components/Modal/version';
 import { version as PageShell } from './components/PageShell/version';
+import { version as PasswordAuth } from './components/PasswordAuth/version';
 import { version as Pane } from './components/Pane/version';
 import { version as PriceTag } from './components/PriceTag/version';
+import { version as DescriptionList } from './components/DescriptionList/version';
+import { version as Timeline } from './components/Timeline/version';
+import { version as Chip } from './components/Chip/version';
+import { version as QuantityStepper } from './components/QuantityStepper/version';
+import { version as ScrollRail } from './components/ScrollRail/version';
 import { version as ProductCard } from './components/ProductCard/version';
 import { version as Radio } from './components/Radio/version';
 import { version as SearchBox } from './components/SearchBox/version';
@@ -58,8 +64,14 @@ export const componentVersions = {
   InlineStatus,
   Modal,
   PageShell,
+  PasswordAuth,
   Pane,
   PriceTag,
+  Chip,
+  DescriptionList,
+  Timeline,
+  QuantityStepper,
+  ScrollRail,
   ProductCard,
   Radio,
   SearchBox,

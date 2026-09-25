@@ -8,6 +8,11 @@ export interface StockBadgeProps {
   status: StockBadgeStatus;
   /** Units available, from the same response. Shown as "Only N left" when status is `low`. */
   available?: number;
+  /**
+   * What to call a SKU whose stock isn't tracked. A shopper only needs to know they can buy it
+   * ("In stock", the default); an owner's inventory screen should say "Not tracked".
+   */
+  untrackedLabel?: string;
   className?: string;
 }
 
@@ -19,11 +24,17 @@ const LOOK: Record<StockBadgeStatus, { tone: BadgeTone; label: string }> = {
 };
 
 /** Stock status pill. */
-export function StockBadge({ status, available, className = '' }: StockBadgeProps) {
+export function StockBadge({ status, available, untrackedLabel, className = '' }: StockBadgeProps) {
   const { tone, label } = LOOK[status];
+  const text =
+    status === 'low' && available !== undefined
+      ? `Only ${available} left`
+      : status === 'untracked' && untrackedLabel
+        ? untrackedLabel
+        : label;
   return (
     <Badge tone={tone} className={className}>
-      {status === 'low' && available !== undefined ? `Only ${available} left` : label}
+      {text}
     </Badge>
   );
 }

@@ -18,7 +18,8 @@ export function EmptyState({ icon, title, description, action, className = '' }:
         </div>
       ) : null}
       <p className="text-sm font-medium text-fg">{title}</p>
-      {description ? <p className="text-sm text-fg-subtle">{description}</p> : null}
+      {/* a div: a description often carries a hint list or a status line, which cannot nest in a p */}
+      {description ? <div className="text-sm text-fg-subtle">{description}</div> : null}
       {action ? <div className="mt-2">{action}</div> : null}
     </div>
   );

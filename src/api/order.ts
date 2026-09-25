@@ -42,7 +42,7 @@ export interface OrderPayment {
   checkout_url?: string
 }
 
-export type ShipmentStatus = 'created' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'returned'
+export type ShipmentStatus = 'created' | 'picked_up' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'failed' | 'returned' | 'cancelled'
 
 export interface TrackingEvent {
   status: ShipmentStatus
@@ -140,7 +140,11 @@ export function orderApi(http: HttpClient) {
     requestReturn: (tenantId: string, id: string, reason: string) =>
       http.request<Order>(`/v1/orders/${id}/return`, { method: 'POST', body: { reason }, tenantId }),
     // backoffice, orders:view
-    storeOrders: (tenantId: string) => http.request<{ orders: Order[] }>('/v1/store/orders', { tenantId }),
+    /** orders:view. `customerId` narrows it to one shopper's history (filtered in SQL, not here). */
+    storeOrders: (tenantId: string, params: { customerId?: string } = {}) =>
+      http.request<{ orders: Order[] }>(`/v1/store/orders${params.customerId ? `?customer_id=${encodeURIComponent(params.customerId)}` : ''}`, {
+        tenantId
+      }),
     storeOrder: (tenantId: string, id: string) => http.request<Order>(`/v1/store/orders/${id}`, { tenantId }),
     /** orders:update. Only NEXT_ORDER_STATUSES transitions; 409 invalid_transition otherwise. Cancel before shipment and RETURNED put stock back; RETURNED refunds online orders. */
     updateStatus: (tenantId: string, id: string, status: OrderStatus, note?: string) =>
@@ -169,12 +173,18 @@ export interface CourierAccount {
   base_url: string
   verified_at?: string
   updated_at: string
+  /** empty when the store rides on the platform's developer app */
+  api_key?: string
 }
 
 export interface BlueDartInput {
   login_id: string
   /** omit to keep the stored key */
   license_key?: string
+  /** the store's own developer app; omit to use the platform's */
+  api_key?: string
+  /** omit to keep the stored secret */
+  api_secret?: string
   customer_code?: string
   origin_area?: string
   pickup: CourierAccount['pickup']
@@ -191,6 +201,13 @@ export function logisticsApi(http: HttpClient) {
     /** Order must be CONFIRMED or PACKED. 409 duplicate_shipment if it already has one. eta is YYYY-MM-DD. */
     create: (tenantId: string, input: { order_id: string; courier: string; awb: string; eta?: string }) =>
       http.request<Shipment>('/v1/store/shipments', { method: 'POST', body: input, tenantId }),
+    /**
+     * Voids the waybill with the courier and cancels the shipment; the order goes back to PACKED so it
+     * can be booked again. Only before pickup: 409 invalid_transition afterwards, 422 courier_rejected
+     * when the courier refuses.
+     */
+    cancel: (tenantId: string, id: string, reason?: string) =>
+      http.request<Shipment>(`/v1/store/shipments/${id}/cancel`, { method: 'POST', body: { reason }, tenantId }),
     /** Records a scan; only NEXT_SHIPMENT_STATUSES transitions. */
     track: (tenantId: string, id: string, status: ShipmentStatus, location?: string, note?: string) =>
       http.request<Shipment>(`/v1/store/shipments/${id}/status`, { method: 'PATCH', body: { status, location, note }, tenantId }),

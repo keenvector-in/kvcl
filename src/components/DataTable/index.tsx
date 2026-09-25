@@ -106,7 +106,7 @@ export function DataTable<T>({
       );
     }
     return (
-      <div className={`overflow-x-auto rounded-2xl border border-line bg-surface ${className}`} aria-busy="true">
+      <div className={`relative overflow-x-auto rounded-2xl border border-line bg-surface ${className}`} aria-busy="true">
         <table className="w-full min-w-full text-left text-sm">
           {head}
           <tbody className="divide-y divide-line">
@@ -145,12 +145,18 @@ export function DataTable<T>({
   ) : null;
 
   if (filtered.length === 0) {
-    const empty = (
-      <EmptyState
-        title={query ? `No results for “${query}”.` : (emptyMessage ?? emptyTitle)}
-        description={query ? undefined : emptyDescription}
-      />
-    );
+    // A caller's own `emptyMessage` element replaces the whole empty area — wrapping it in
+    // EmptyState's title would nest its markup inside a <p>.
+    const custom = emptyMessage !== undefined && typeof emptyMessage !== 'string';
+    const empty =
+      custom && !query ? (
+        <>{emptyMessage}</>
+      ) : (
+        <EmptyState
+          title={query ? `No results for “${query}”.` : ((emptyMessage as string | undefined) ?? emptyTitle)}
+          description={query ? undefined : emptyDescription}
+        />
+      );
     return search ? (
       <div className={className}>
         {search}
@@ -163,8 +169,10 @@ export function DataTable<T>({
 
   const rowClick = onToggleExpand ?? onRowClick;
 
+  // relative: the header's sr-only labels are absolutely positioned and would otherwise escape the
+  // scroller and widen the whole page on a phone.
   const table = (
-    <div className="overflow-x-auto rounded-2xl border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-2xl border border-line bg-surface">
       <table className="w-full min-w-full text-left text-sm">
         {head}
         <tbody className="divide-y divide-line">
@@ -179,6 +187,9 @@ export function DataTable<T>({
                   onKeyDown={
                     rowClick
                       ? (e) => {
+                          // A row can hold its own buttons and links; Enter/Space there belongs to
+                          // them, not to the row's click.
+                          if (e.target !== e.currentTarget) return;
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             rowClick(row);
