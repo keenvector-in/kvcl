@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -55,6 +56,79 @@ describe('AuthProvider', () => {
     );
     await userEvent.click(screen.getByText('go'));
     await waitFor(() => expect(screen.getByText('signed-out')).toBeInTheDocument());
+  });
+});
+
+// A JWT whose only meaningful claim is exp, `secs` from now.
+const jwt = (secs: number) => `h.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + secs }))}.s`;
+const me = { ok: true, status: 200, json: async () => ({ id: 'u1', email: 'a@b.com', role: 'business_admin', tenant_id: 't1' }) };
+
+describe('AuthProvider session renewal', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('StrictMode double mount refreshes once and keeps the rotated token', async () => {
+    localStorage.setItem('kv_refresh_token', 'r1');
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation(async (url: string) =>
+      url.endsWith('/refresh') ? { ok: true, status: 200, json: async () => ({ access_token: jwt(900), refresh_token: 'r2' }) } : me,
+    );
+    render(
+      <StrictMode>
+        <AuthProvider apiBaseUrl="http://api.test">
+          <LoginProbe />
+        </AuthProvider>
+      </StrictMode>,
+    );
+    await waitFor(() => expect(screen.getByText('business_admin')).toBeInTheDocument());
+    expect(f.mock.calls.filter(([u]) => String(u).endsWith('/refresh'))).toHaveLength(1);
+    expect(localStorage.getItem('kv_refresh_token')).toBe('r2');
+  });
+
+  it('renews the access token before it expires', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    localStorage.setItem('kv_refresh_token', 'r1');
+    let n = 0;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation(async (url: string) =>
+      url.endsWith('/refresh')
+        ? { ok: true, status: 200, json: async () => ({ access_token: jwt(120), refresh_token: `r${(n += 1) + 1}` }) }
+        : me,
+    );
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <LoginProbe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('business_admin')).toBeInTheDocument());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(61_000);
+    });
+    expect(n).toBe(2);
+    expect(localStorage.getItem('kv_refresh_token')).toBe('r3');
+    expect(screen.getByText('business_admin')).toBeInTheDocument();
+  });
+
+  it('flags sessionExpired when the refresh token is rejected', async () => {
+    localStorage.setItem('kv_refresh_token', 'dead');
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: false, status: 401, json: async () => ({}) });
+    function Probe() {
+      const { sessionExpired, loading } = useAuth();
+      return <span>{loading ? 'loading' : String(sessionExpired)}</span>;
+    }
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <Probe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('true')).toBeInTheDocument());
+    expect(localStorage.getItem('kv_refresh_token')).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Spinner } from '../components/Spinner/index';
 
@@ -15,6 +15,9 @@ interface AuthContextValue {
   user: AuthUser | null;
   accessToken: string | null;
   loading: boolean;
+  /** True once a live session could not be renewed — the login page says so
+   * instead of the user landing there with no explanation. */
+  sessionExpired: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -32,6 +35,21 @@ async function parseErrorMessage(res: Response): Promise<string> {
   }
 }
 
+/** Seconds until a JWT's `exp`, or 0 when it cannot be read. */
+function secondsLeft(jwt: string): number {
+  try {
+    const { exp } = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+    return exp ? exp - Date.now() / 1000 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// Renew this long before the access token expires.
+const REFRESH_EARLY_S = 60;
+
+class SessionExpiredError extends Error {}
+
 /** Wrap a portal's routes once. Every KeenVector frontend (business-admin,
  * super-admin) uses this same session logic against edge-gateway's
  * /api/auth/* endpoints — see kb/00_Global/identity-and-auth.md. */
@@ -39,6 +57,8 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const inFlight = useRef<Promise<string> | null>(null);
 
   const fetchMe = useCallback(
     async (token: string) => {
@@ -51,33 +71,82 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
     [apiBaseUrl],
   );
 
+  // The server rotates the refresh token on every use, so two concurrent
+  // refreshes with the same token make one of them fail. Calls in this tab
+  // share one promise; the Web Lock serialises tabs, and each call re-reads
+  // localStorage inside it so it uses whatever the previous holder stored.
+  const refresh = useCallback((): Promise<string> => {
+    if (inFlight.current) return inFlight.current;
+    const run = async () => {
+      const refreshToken = localStorage.getItem(REFRESH_KEY);
+      if (!refreshToken) throw new SessionExpiredError();
+      const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (res.status === 401) {
+        // Only drop the token we tried; another tab may have stored a newer one.
+        if (localStorage.getItem(REFRESH_KEY) === refreshToken) localStorage.removeItem(REFRESH_KEY);
+        throw new SessionExpiredError();
+      }
+      if (!res.ok) throw new Error(await parseErrorMessage(res));
+      const data = (await res.json()) as { access_token: string; refresh_token: string };
+      localStorage.setItem(REFRESH_KEY, data.refresh_token);
+      setAccessToken(data.access_token);
+      return data.access_token;
+    };
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+    const p = (locks ? locks.request('kv-auth-refresh', run) : run()).finally(() => {
+      inFlight.current = null;
+    });
+    inFlight.current = p;
+    return p;
+  }, [apiBaseUrl]);
+
+  const expire = useCallback(() => {
+    setAccessToken(null);
+    setUser(null);
+    setSessionExpired(true);
+  }, []);
+
   // On load, a stored refresh token (survives a page reload; the access
   // token deliberately does not) is exchanged for a fresh session.
   useEffect(() => {
-    const refreshToken = localStorage.getItem(REFRESH_KEY);
-    if (!refreshToken) {
+    if (!localStorage.getItem(REFRESH_KEY)) {
       setLoading(false);
       return;
     }
-    (async () => {
-      try {
-        const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refreshToken }),
-        });
-        if (!res.ok) throw new Error('session expired');
-        const data = (await res.json()) as { access_token: string; refresh_token: string };
-        localStorage.setItem(REFRESH_KEY, data.refresh_token);
-        setAccessToken(data.access_token);
-        setUser(await fetchMe(data.access_token));
-      } catch {
-        localStorage.removeItem(REFRESH_KEY);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [apiBaseUrl, fetchMe]);
+    refresh()
+      .then(fetchMe)
+      .then(setUser)
+      .catch((err) => {
+        if (err instanceof SessionExpiredError) setSessionExpired(true);
+      })
+      .finally(() => setLoading(false));
+  }, [refresh, fetchMe]);
+
+  // Keep the session alive: renew shortly before the access token expires,
+  // and again when the tab comes back (background timers are throttled, and
+  // a laptop that slept past expiry never fired its timer). A network error
+  // keeps the session and retries on the next tick instead of signing out.
+  useEffect(() => {
+    if (!accessToken) return;
+    const renew = () =>
+      refresh().catch((err) => {
+        if (err instanceof SessionExpiredError) expire();
+        else timer = setTimeout(renew, 30_000);
+      });
+    let timer = setTimeout(renew, Math.max(0, secondsLeft(accessToken) - REFRESH_EARLY_S) * 1000);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && secondsLeft(accessToken) < REFRESH_EARLY_S) renew();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [accessToken, refresh, expire]);
 
   const login = useCallback(
     async (email: string, password: string) => {
@@ -91,6 +160,7 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       localStorage.setItem(REFRESH_KEY, data.refresh_token);
       setAccessToken(data.access_token);
       setUser(data.user);
+      setSessionExpired(false);
     },
     [apiBaseUrl],
   );
@@ -112,7 +182,7 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   }, [apiBaseUrl]);
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, accessToken, loading, sessionExpired, login, logout }}>{children}</AuthContext.Provider>
   );
 }
 
