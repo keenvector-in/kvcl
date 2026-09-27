@@ -4,8 +4,12 @@
 // versions an app is running.
 import { version as AuthLayout } from './components/AuthLayout/version';
 import { version as Checkbox } from './components/Checkbox/version';
+import { version as CountUp } from './components/CountUp/version';
+import { version as Crossfade } from './components/Crossfade/version';
 import { version as ConfirmDialog } from './components/ConfirmDialog/version';
 import { version as Drawer } from './components/Drawer/version';
+import { version as PageTransition } from './components/PageTransition/version';
+import { version as Stagger } from './components/Stagger/version';
 import { version as ErrorBoundary } from './components/ErrorBoundary/version';
 import { version as IconButton } from './components/IconButton/version';
 import { version as InlineStatus } from './components/InlineStatus/version';
@@ -15,6 +19,8 @@ import { version as PasswordAuth } from './components/PasswordAuth/version';
 import { version as Pane } from './components/Pane/version';
 import { version as PriceTag } from './components/PriceTag/version';
 import { version as DescriptionList } from './components/DescriptionList/version';
+import { version as ContactForm } from './components/ContactForm/version';
+import { version as Accordion } from './components/Accordion/version';
 import { version as Timeline } from './components/Timeline/version';
 import { version as Chip } from './components/Chip/version';
 import { version as QuantityStepper } from './components/QuantityStepper/version';
@@ -57,8 +63,12 @@ import { version as WorkflowBuilder } from './components/WorkflowBuilder/version
 export const componentVersions = {
   AuthLayout,
   Checkbox,
+  CountUp,
+  Crossfade,
   ConfirmDialog,
   Drawer,
+  PageTransition,
+  Stagger,
   ErrorBoundary,
   IconButton,
   InlineStatus,
@@ -69,6 +79,8 @@ export const componentVersions = {
   PriceTag,
   Chip,
   DescriptionList,
+  ContactForm,
+  Accordion,
   Timeline,
   QuantityStepper,
   ScrollRail,

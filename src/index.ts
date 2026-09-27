@@ -75,6 +75,16 @@ export { StatCard } from './components/StatCard/index';
 export type { StatCardProps } from './components/StatCard/index';
 export { Reveal } from './components/Reveal/index';
 export type { RevealProps } from './components/Reveal/index';
+export { Stagger } from './components/Stagger/index';
+export type { StaggerProps, StaggerItemProps } from './components/Stagger/index';
+export { PageTransition } from './components/PageTransition/index';
+export type { PageTransitionProps } from './components/PageTransition/index';
+export { CountUp } from './components/CountUp/index';
+export { Crossfade } from './components/Crossfade/index';
+export type { CrossfadeProps } from './components/Crossfade/index';
+export type { CountUpProps } from './components/CountUp/index';
+// The shared motion language: durations, easings, springs and the variants every portal animates with.
+export { duration, ease, spring, transition, fadeUp, popIn, staggerList, staggerItem, pageTransition, STAGGER } from './lib/motion';
 export { ThemeProvider, defaultTheme, isHexColor, themeFonts, themeStyle } from './components/ThemeProvider/index';
 export type { TenantTheme, ThemeFont, ThemeMode, ThemeProviderProps } from './components/ThemeProvider/index';
 /* ---- KeenPlaza: brand mark, named icon set, gateway clients, store theme ----
@@ -94,7 +104,7 @@ export type { TokenPair, OtpRequestResponse, ForgotPasswordResponse, Session, Me
 export { tenantApi } from './api/tenant';
 export type { Tenant, Store, Membership, FeatureFlag, TenantStatus, MembershipStatus, CallerPermissions, MemberTenant } from './api/tenant';
 export { storefrontApi } from './api/storefront';
-export type { Storefront, StoreContent, TenantDomain } from './api/storefront';
+export type { Storefront, StoreContent, StorePages, StoreEnquiry, EnquiryStatus, EnquiryInput, EnquiryAnswer, StoreFormField, FormFieldType, KeenVectorLink, KeenVectorStatus, TenantDomain } from './api/storefront';
 export { catalogApi } from './api/catalog';
 export type { Brand, Category, Product, Variant, ProductStatus, VariantStatus, CategoryStatus, Attribute, AttributeDataType, AttributeStatus, AttributeInput, ProductSpec, ProductInput, VariantInput, CategoryInput } from './api/catalog';
 export { pricingApi } from './api/pricing';
@@ -189,6 +199,10 @@ export type { PriceTagProps } from './components/PriceTag/index';
 export { Timeline } from './components/Timeline/index';
 export type { TimelineProps, TimelineEntry } from './components/Timeline/index';
 export { DescriptionList } from './components/DescriptionList/index';
+export { Accordion } from './components/Accordion/index';
+export type { AccordionProps } from './components/Accordion/index';
+export { ContactForm, DEFAULT_CONTACT_FIELDS, FORM_FIELD_TYPES, isChoiceField, isTextField, textCap } from './components/ContactForm/index';
+export type { ContactFormProps, ContactAnswers } from './components/ContactForm/index';
 export type { DescriptionListProps, DescriptionItem } from './components/DescriptionList/index';
 export { Chip } from './components/Chip/index';
 export type { ChipProps } from './components/Chip/index';

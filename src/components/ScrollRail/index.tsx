@@ -72,7 +72,7 @@ export function ScrollRail({ children, title, action, arrows = true, gap = 4, cl
       <div
         ref={ref}
         onScroll={measure}
-        className={`-mx-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${GAP[gap]} [&>*]:snap-start motion-reduce:scroll-auto`}
+        className={`-mx-4 flex snap-x snap-mandatory overflow-x-auto scroll-smooth scroll-px-4 px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${GAP[gap]} [&>*]:snap-start motion-reduce:scroll-auto`}
       >
         {children}
       </div>
