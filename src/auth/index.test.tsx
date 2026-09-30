@@ -285,3 +285,76 @@ describe('AuthProvider across tabs', () => {
     expect(refreshes).toBe(2);
   });
 });
+
+describe('AuthProvider races', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  function LogoutProbe() {
+    const { logout, user, loading } = useAuth();
+    return (
+      <div>
+        <button onClick={() => void logout()}>out</button>
+        <span>{loading ? 'loading' : user ? user.role : 'signed-out'}</span>
+      </div>
+    );
+  }
+
+  it('signing out while a refresh is in flight stays signed out and revokes the rotated token', async () => {
+    localStorage.setItem('kv_refresh_token', 'r1');
+    let finishRefresh!: () => void;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation((url: string) => {
+      if (url.endsWith('/refresh'))
+        return new Promise((resolve) => {
+          finishRefresh = () => resolve({ ok: true, status: 200, json: async () => ({ access_token: jwt(900), refresh_token: 'r2' }) });
+        });
+      if (url.endsWith('/logout')) return Promise.resolve({ ok: true, status: 204 });
+      return Promise.resolve(me);
+    });
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <LogoutProbe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(finishRefresh).toBeTypeOf('function'));
+    await userEvent.click(screen.getByText('out'));
+    await act(async () => finishRefresh());
+
+    await waitFor(() => expect(screen.getByText('signed-out')).toBeInTheDocument());
+    expect(localStorage.getItem('kv_refresh_token')).toBeNull();
+    const revoked = f.mock.calls.filter(([u]) => String(u).endsWith('/logout')).map(([, init]) => JSON.parse(init.body).refresh_token);
+    expect(revoked).toContain('r2');
+  });
+
+  it('a token that lives under a minute does not refresh in a loop', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    localStorage.setItem('kv_refresh_token', 'r1');
+    let n = 0;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation(async (url: string) =>
+      url.endsWith('/refresh') ? { ok: true, status: 200, json: async () => ({ access_token: jwt(30), refresh_token: `r${(n += 1) + 1}` }) } : me,
+    );
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <LogoutProbe />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('business_admin')).toBeInTheDocument());
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5_000);
+    });
+    expect(n).toBe(1); // the initial restore only; a 0 ms timer would have spun here
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+    expect(n).toBeGreaterThanOrEqual(2);
+    expect(n).toBeLessThanOrEqual(4);
+  });
+});

@@ -42,20 +42,49 @@ async function parseErrorMessage(res: Response): Promise<string> {
   }
 }
 
+function jwtTimes(jwt: string): { exp?: number; iat?: number } {
+  try {
+    return JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number; iat?: number };
+  } catch {
+    return {};
+  }
+}
+
 /** Seconds until a JWT's `exp`, or 0 when it cannot be read. */
 function secondsLeft(jwt: string): number {
-  try {
-    const { exp } = JSON.parse(atob(jwt.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
-    return exp ? exp - Date.now() / 1000 : 0;
-  } catch {
-    return 0;
-  }
+  const { exp } = jwtTimes(jwt);
+  return exp ? exp - Date.now() / 1000 : 0;
 }
 
 // Renew this long before the access token expires.
 const REFRESH_EARLY_S = 60;
+// Never schedule a renewal sooner than this: an unreadable, very short-lived or
+// clock-skewed token must not turn the timer into a refresh loop.
+const MIN_REFRESH_DELAY_S = 10;
+
+/** When to renew a token that was just issued. Measured on the token's own
+ * clock (exp - iat), so a client clock running ahead can't shrink it to 0. */
+function refreshDelayS(jwt: string): number {
+  const { exp, iat } = jwtTimes(jwt);
+  const lifetime = exp && iat ? exp - iat : secondsLeft(jwt);
+  return Math.max(MIN_REFRESH_DELAY_S, lifetime - Math.min(REFRESH_EARLY_S, lifetime / 2));
+}
 
 class SessionExpiredError extends Error {}
+
+// Best-effort — the session is gone client-side whether or not this succeeds.
+function revoke(apiBaseUrl: string, refreshToken: string): Promise<void> {
+  return fetch(`${apiBaseUrl}/api/auth/logout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  }).then(
+    () => {},
+    () => {},
+  );
+}
+/** The session this refresh belonged to was signed out or replaced meanwhile. */
+class SessionEndedError extends Error {}
 
 /** Wrap a portal's routes once. Every KeenVector frontend (business-admin,
  * super-admin) uses this same session logic against edge-gateway's
@@ -66,6 +95,9 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
   const inFlight = useRef<Promise<string> | null>(null);
+  // Bumped by login and logout. A refresh that started under an older epoch
+  // must not write its result back — that would resurrect a signed-out session.
+  const epoch = useRef(0);
   const userRef = useRef<AuthUser | null>(null);
   // Bumped when the signed-in identity changes under this tab: children are
   // remounted so no state from the previous user/tenant survives.
@@ -96,7 +128,10 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   // localStorage inside it so it uses whatever the previous holder stored.
   const refresh = useCallback((): Promise<string> => {
     if (inFlight.current) return inFlight.current;
+    const started = epoch.current;
+    const ended = () => epoch.current !== started;
     const run = async () => {
+      if (ended()) throw new SessionEndedError();
       const refreshToken = localStorage.getItem(REFRESH_KEY);
       if (!refreshToken) throw new SessionExpiredError();
       const res = await fetchOrOffline(`${apiBaseUrl}/api/auth/refresh`, {
@@ -111,17 +146,23 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       }
       if (!res.ok) throw new Error(await parseErrorMessage(res));
       const data = (await res.json()) as { access_token: string; refresh_token: string };
+      if (ended()) {
+        // The server already rotated the token for a session that's gone: revoke it.
+        revoke(apiBaseUrl, data.refresh_token);
+        throw new SessionEndedError();
+      }
       localStorage.setItem(REFRESH_KEY, data.refresh_token);
       // The stored token may have been written by another tab for another
       // user, so always re-read who this session now is.
       const me = await fetchMe(data.access_token);
+      if (ended()) throw new SessionEndedError();
       setAccessToken(data.access_token);
       adoptUser(me);
       return data.access_token;
     };
     const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
     const p = (locks ? locks.request('kv-auth-refresh', run) : run()).finally(() => {
-      inFlight.current = null;
+      if (inFlight.current === p) inFlight.current = null;
     });
     inFlight.current = p;
     return p;
@@ -182,17 +223,20 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   // keeps the session and retries on the next tick instead of signing out.
   useEffect(() => {
     if (!accessToken) return;
+    let cancelled = false;
     const renew = () =>
       refresh().catch((err) => {
+        if (cancelled || err instanceof SessionEndedError) return;
         if (err instanceof SessionExpiredError) expire();
         else timer = setTimeout(renew, 30_000);
       });
-    let timer = setTimeout(renew, Math.max(0, secondsLeft(accessToken) - REFRESH_EARLY_S) * 1000);
+    let timer = setTimeout(renew, refreshDelayS(accessToken) * 1000);
     const onVisible = () => {
       if (document.visibilityState === 'visible' && secondsLeft(accessToken) < REFRESH_EARLY_S) renew();
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       document.removeEventListener('visibilitychange', onVisible);
     };
@@ -207,6 +251,8 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       });
       if (!res.ok) throw new Error(await parseErrorMessage(res));
       const data = (await res.json()) as { access_token: string; refresh_token: string; user: AuthUser };
+      epoch.current += 1;
+      inFlight.current = null;
       localStorage.setItem(REFRESH_KEY, data.refresh_token);
       setAccessToken(data.access_token);
       adoptUser(data.user);
@@ -216,21 +262,15 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   );
 
   const logout = useCallback(async () => {
+    epoch.current += 1;
+    inFlight.current = null;
     const refreshToken = localStorage.getItem(REFRESH_KEY);
     localStorage.removeItem(REFRESH_KEY);
     localStorage.removeItem(IDENTITY_KEY);
     setAccessToken(null);
     userRef.current = null;
     setUser(null);
-    if (refreshToken) {
-      // Best-effort — the session is gone client-side regardless of whether
-      // the revoke call itself succeeds.
-      await fetch(`${apiBaseUrl}/api/auth/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      }).catch(() => {});
-    }
+    if (refreshToken) await revoke(apiBaseUrl, refreshToken);
   }, [apiBaseUrl]);
 
   return (
