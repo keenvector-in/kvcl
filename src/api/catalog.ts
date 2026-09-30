@@ -36,7 +36,33 @@ export interface Product {
   highlights: string[]
   status: ProductStatus
   created_at: string
+  /** From published reviews; 0 and 0 until somebody rates it. Show nothing then (never a made-up rating). */
+  rating_avg: number
+  rating_count: number
 }
+export type ReviewStatus = 'published' | 'hidden'
+export interface Review {
+  id: string
+  product_id: string
+  product_title?: string
+  /** Staff list only; the public list leaves it out. */
+  customer_id?: string
+  author_name: string
+  rating: number
+  title: string
+  body: string
+  /** The shopper has a delivered order for this product (the server decides). */
+  verified: boolean
+  status: ReviewStatus
+  created_at: string
+}
+export interface RatingSummary {
+  rating_avg: number
+  rating_count: number
+  /** How many 1★ … 5★ (index 0 is 1 star). */
+  histogram: [number, number, number, number, number]
+}
+export interface ReviewInput { author_name: string; rating: number; title: string; body: string }
 export interface Variant {
   id: string
   product_id: string
@@ -152,6 +178,23 @@ export function catalogApi(http: HttpClient, opts: { includeUnpublished?: boolea
         tenantId
       }),
     updateVariant: (tenantId: string, productId: string, variantId: string, input: VariantInput) =>
-      http.request<Variant>(`/v1/products/${productId}/variants/${variantId}`, { method: 'PUT', body: input, tenantId })
+      http.request<Variant>(`/v1/products/${productId}/variants/${variantId}`, { method: 'PUT', body: input, tenantId }),
+
+    // Reviews: anyone reads a product's published ones; a signed-in shopper posts one per product (no
+    // edit, 409 already_reviewed); staff list them and hide or show them again.
+    productReviews: (tenantId: string, productId: string, limit = 10, offset = 0) =>
+      http.request<{ summary: RatingSummary; reviews: Review[] }>(`/v1/products/${productId}/reviews?limit=${limit}&offset=${offset}`, { tenantId, auth: false }),
+    myReview: (tenantId: string, productId: string) =>
+      http.request<{ review: Review | null; verified: boolean }>(`/v1/products/${productId}/reviews/mine`, { tenantId }),
+    postReview: (tenantId: string, productId: string, input: ReviewInput) =>
+      http.request<Review>(`/v1/products/${productId}/reviews`, { method: 'POST', body: input, tenantId }),
+    listReviews: (tenantId: string, opts: { status?: ReviewStatus; productId?: string; limit?: number; offset?: number } = {}) => {
+      const q = new URLSearchParams({ limit: String(opts.limit ?? 50), offset: String(opts.offset ?? 0) })
+      if (opts.status) q.set('status', opts.status)
+      if (opts.productId) q.set('product_id', opts.productId)
+      return http.request<{ reviews: Review[]; total: number }>(`/v1/reviews?${q}`, { tenantId })
+    },
+    setReviewStatus: (tenantId: string, reviewId: string, status: ReviewStatus) =>
+      http.request<Review>(`/v1/reviews/${reviewId}`, { method: 'PATCH', body: { status }, tenantId })
   }
 }

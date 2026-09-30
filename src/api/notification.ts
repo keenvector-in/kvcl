@@ -7,7 +7,7 @@ import type { HttpClient } from './httpClient'
 export type NotifyChannel = 'whatsapp' | 'email'
 
 /** The order events a shopper is told about. Internal steps (PACKED) are deliberately absent. */
-export type NotifyEvent = 'OrderConfirmed' | 'OrderShipped' | 'OrderOutForDelivery' | 'OrderDelivered' | 'OrderCancelled'
+export type NotifyEvent = 'OrderConfirmed' | 'OrderShipped' | 'OrderOutForDelivery' | 'OrderDelivered' | 'OrderCancelled' | 'ReviewPosted'
 
 export interface NotifyTemplate {
   id: string
@@ -38,16 +38,25 @@ export interface NotifyDelivery {
   created_at: string
 }
 
-/** What each event means to a shopper, for the admin screen. */
-export const NOTIFY_EVENTS: { value: NotifyEvent; label: string; when: string }[] = [
+/** What each event means, for the admin screen. `to: 'store'` goes to the store itself, not a shopper. */
+export const NOTIFY_EVENTS: { value: NotifyEvent; label: string; when: string; to?: 'store' }[] = [
   { value: 'OrderConfirmed', label: 'Order confirmed', when: 'as soon as an order is placed and paid for' },
   { value: 'OrderShipped', label: 'Order shipped', when: 'when the parcel leaves the shop' },
   { value: 'OrderOutForDelivery', label: 'Out for delivery', when: 'on the morning it arrives' },
   { value: 'OrderDelivered', label: 'Delivered', when: 'once the courier marks it delivered' },
-  { value: 'OrderCancelled', label: 'Cancelled', when: 'when an order is cancelled, with the refund position' }
+  { value: 'OrderCancelled', label: 'Cancelled', when: 'when an order is cancelled, with the refund position' },
+  {
+    value: 'ReviewPosted',
+    label: 'New product review (to you)',
+    when: 'to your own support phone and e-mail (Online store → Home page → Your shop) when a shopper reviews a product',
+    to: 'store'
+  }
 ]
 
-/** Placeholders a template may use; anything else renders empty. */
+/** Placeholders the new-review message may use. */
+export const REVIEW_PLACEHOLDERS = ['store_name', 'customer_name', 'product_title', 'rating', 'review_text', 'verified_line'] as const
+
+/** Placeholders an order template may use; anything else renders empty. */
 export const NOTIFY_PLACEHOLDERS = [
   'store_name',
   'customer_name',

@@ -33,6 +33,7 @@ import { version as Select } from './components/Select/version';
 import { version as Sidebar } from './components/Sidebar/version';
 import { version as Skeleton } from './components/Skeleton/version';
 import { version as StatusPill } from './components/StatusPill/version';
+import { version as RatingStars } from './components/RatingStars/version';
 import { version as StockBadge } from './components/StockBadge/version';
 import { version as Switch } from './components/Switch/version';
 import { version as TenantIdDisplay } from './components/TenantIdDisplay/version';
@@ -93,6 +94,7 @@ export const componentVersions = {
   Sidebar,
   Skeleton,
   StatusPill,
+  RatingStars,
   StockBadge,
   Switch,
   TenantIdDisplay,
