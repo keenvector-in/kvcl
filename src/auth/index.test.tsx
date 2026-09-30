@@ -57,6 +57,22 @@ describe('AuthProvider', () => {
     await userEvent.click(screen.getByText('go'));
     await waitFor(() => expect(screen.getByText('signed-out')).toBeInTheDocument());
   });
+
+  it('login while offline rejects with the readable network message', async () => {
+    (fetch as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    let seen: unknown;
+    function OfflineProbe() {
+      const { login } = useAuth();
+      return <button onClick={() => login('a@b.com', 'pw').catch((e) => (seen = e))}>go</button>;
+    }
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <OfflineProbe />
+      </AuthProvider>,
+    );
+    await userEvent.click(screen.getByText('go'));
+    await waitFor(() => expect(seen).toMatchObject({ status: 0, message: "Can't reach KeenVector right now. Check your connection and try again." }));
+  });
 });
 
 // A JWT whose only meaningful claim is exp, `secs` from now.
@@ -177,5 +193,95 @@ describe('ProtectedRoute', () => {
     });
     await waitFor(() => expect(screen.getByText(/does not have access/)).toBeInTheDocument());
     expect(screen.queryByText('secret')).not.toBeInTheDocument();
+
+    // A wrong-role user is not stuck: signing out from the denial returns to /login.
+    (fetch as ReturnType<typeof vi.fn>).mockResolvedValue({ ok: true, json: async () => ({}) });
+    await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(screen.queryByText(/does not have access/)).not.toBeInTheDocument());
+    expect(localStorage.getItem('kv_refresh_token')).toBeNull();
+  });
+});
+
+describe('AuthProvider across tabs', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal('fetch', vi.fn());
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  function Who() {
+    const { user } = useAuth();
+    return <span>{user ? `${user.email}@${user.tenant_id}` : 'signed-out'}</span>;
+  }
+
+  it('reloads the user when another tab signs in as someone else', async () => {
+    localStorage.setItem('kv_refresh_token', 'r1');
+    let who = { id: 'u1', email: 'a@b.com', role: 'business_admin', tenant_id: 't1' };
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation(async (url: string) =>
+      url.endsWith('/refresh')
+        ? { ok: true, status: 200, json: async () => ({ access_token: jwt(900), refresh_token: 'rx' }) }
+        : { ok: true, status: 200, json: async () => who },
+    );
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <Who />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('a@b.com@t1')).toBeInTheDocument());
+    expect(localStorage.getItem('kv_session_identity')).toBe('u1:t1');
+
+    // Another tab signs in as u2 of tenant t2.
+    who = { id: 'u2', email: 'c@d.com', role: 'business_admin', tenant_id: 't2' };
+    localStorage.setItem('kv_refresh_token', 'other');
+    localStorage.setItem('kv_session_identity', 'u2:t2');
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'kv_session_identity', newValue: 'u2:t2' }));
+    });
+    await waitFor(() => expect(screen.getByText('c@d.com@t2')).toBeInTheDocument());
+  });
+
+  it('signs out when another tab signs out', async () => {
+    localStorage.setItem('kv_refresh_token', 'r1');
+    (fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) =>
+      url.endsWith('/refresh') ? { ok: true, status: 200, json: async () => ({ access_token: jwt(900), refresh_token: 'r2' }) } : me,
+    );
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <Who />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('a@b.com@t1')).toBeInTheDocument());
+    act(() => {
+      window.dispatchEvent(new StorageEvent('storage', { key: 'kv_refresh_token', newValue: null }));
+    });
+    await waitFor(() => expect(screen.getByText('signed-out')).toBeInTheDocument());
+  });
+
+  it("lets apiClient retry a 401 once with the provider's renewed token", async () => {
+    const { apiClient } = await import('../api/client');
+    localStorage.setItem('kv_refresh_token', 'r1');
+    const fresh = jwt(900);
+    let refreshes = 0;
+    const f = fetch as ReturnType<typeof vi.fn>;
+    f.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/refresh')) {
+        refreshes += 1;
+        return { ok: true, status: 200, json: async () => ({ access_token: fresh, refresh_token: `r${refreshes + 1}` }) };
+      }
+      if (url.endsWith('/me')) return me;
+      const auth = (init?.headers as Record<string, string>).Authorization;
+      return auth === `Bearer ${fresh}`
+        ? new Response(JSON.stringify({ ok: 1 }), { status: 200 })
+        : new Response('{}', { status: 401 });
+    });
+    render(
+      <AuthProvider apiBaseUrl="http://api.test">
+        <Who />
+      </AuthProvider>,
+    );
+    await waitFor(() => expect(screen.getByText('a@b.com@t1')).toBeInTheDocument());
+    await expect(apiClient('http://api.test', '/api/x').get('stale')).resolves.toEqual({ ok: 1 });
+    expect(refreshes).toBe(2);
   });
 });

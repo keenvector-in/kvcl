@@ -1,5 +1,9 @@
 # Sidebar changelog
 
+## 1.3.0 — 2026-09-30
+
+- Group headings and the brand subtitle move from 55–60% to 80% of the rail colour to pass contrast (axe measured 3.75:1).
+
 ## 1.2.0 — 2026-09-20
 
 - Nav counts use the warm brand colour, as the prototype does (kvcl `accent` is the teal secondary).

@@ -7,6 +7,8 @@ export interface AuthBenefit {
 }
 
 export interface AuthLayoutProps {
+  /** The form column's element: `main` for a standalone login page, `div` inside an app that already has its own `<main>`. */
+  as?: 'main' | 'div';
   /** Product or store name shown in the brand panel and above the form. */
   brand: ReactNode;
   /** Square mark content, usually the first letter. */
@@ -36,10 +38,11 @@ export function AuthLayout({
   children,
   footer,
   className = '',
+  as: Column = 'main',
 }: AuthLayoutProps) {
   return (
     <div
-      className={`grid min-h-screen bg-page text-fg lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] ${className}`}
+      className={`grid min-h-screen grid-cols-[minmax(0,1fr)] bg-page text-fg lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] ${className}`}
     >
       <aside className="relative flex flex-col gap-5 overflow-hidden bg-gradient-to-br from-brand-900 via-brand-500 to-warm-500 px-5 py-8 text-white lg:gap-10 lg:px-12 lg:py-16">
         <div className="flex items-center gap-3">
@@ -76,13 +79,14 @@ export function AuthLayout({
           aria-hidden="true"
         />
       </aside>
-      <main className="grid place-items-center px-5 py-12">
-        <div className="flex w-full max-w-100 flex-col gap-4">
+      {/* minmax(0,…) so one long label or code can never widen the page past a phone screen */}
+      <Column className="grid grid-cols-[minmax(0,1fr)] place-items-center px-5 py-12">
+        <div className="flex w-full min-w-0 max-w-100 flex-col gap-4">
           <h1 className="mb-2 text-2xl font-bold tracking-tight">{title}</h1>
           {children}
           {footer ? <div className="mt-4 text-xs text-fg-muted">{footer}</div> : null}
         </div>
-      </main>
+      </Column>
     </div>
   );
 }

@@ -76,10 +76,12 @@ export function Tabs<T extends string = string>({
   }
 
   return (
-    <div role="tablist" aria-label={label} className={`flex gap-1 overflow-x-auto border-b border-line ${className}`}>
+    <div role="tablist" aria-label={label} className={`flex gap-1 overflow-x-auto overflow-y-hidden border-b border-line ${className}`}>
       {items.map((t, i) => {
         const id = idOf(t);
         const active = id === value;
+        // With no tab selected, the first enabled one keeps the tablist reachable by Tab.
+        const focusable = active || (!items.some((x) => idOf(x) === value) && i === items.findIndex((x) => !x.disabled));
         return (
           <button
             key={id}
@@ -89,15 +91,15 @@ export function Tabs<T extends string = string>({
             role="tab"
             type="button"
             aria-selected={active}
-            tabIndex={active ? 0 : -1}
+            tabIndex={focusable ? 0 : -1}
             disabled={t.disabled}
             onClick={() => onChange(id)}
             onKeyDown={(e) => onKeyDown(e, i)}
-            className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none ${active ? 'text-brand-600 dark:text-brand-400' : 'text-fg-muted hover:text-fg'}`}
+            className={`relative whitespace-nowrap px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-400 disabled:opacity-50 disabled:pointer-events-none ${active ? 'text-brand-600 dark:text-brand-400' : 'text-fg-muted hover:text-fg'}`}
           >
             {t.label}
             {t.count ? <span className="ml-1.5 rounded-full bg-fg/10 px-1.5 text-[10px] text-fg-muted">{t.count}</span> : null}
-            {active ? <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-brand-500" /> : null}
+            {active ? <span className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-brand-500" /> : null}
           </button>
         );
       })}

@@ -1,5 +1,10 @@
 # PasswordAuth changelog
 
+## 1.3.0 — 2026-09-30
+
+- Identity's error codes read as sentences (`invalid_credentials` → "That email and password don’t match…"); anything unmapped gets a capital letter; a network failure says so. Exported as `authErrorText`.
+- `LoginDetailsPanel` leaves out the "Mobile number" line for an account made with e-mail alone, instead of printing a blank.
+
 ## 1.2.0 — 2026-09-22
 
 - New `RegisterForm`: email sign-up (email, password, password again) for accounts that don't start

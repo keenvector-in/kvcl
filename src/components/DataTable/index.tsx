@@ -1,4 +1,5 @@
 import { Fragment, useMemo, useState, type ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Spinner } from '../Spinner/index';
 import { EmptyState } from '../EmptyState/index';
 import { ErrorState } from '../ErrorState/index';
@@ -10,6 +11,9 @@ export interface DataTableColumn<T> {
   /** Column heading. `label` is the KeenPlaza spelling of the same thing — pass either. */
   header?: ReactNode;
   label?: ReactNode;
+  /** Screen-reader heading for a column with no visible one (an actions or checkbox column).
+   * Default `Actions`, so an empty header never reaches assistive tech as a blank cell. */
+  srHeader?: string;
   /** Cell content. Default: the row's value at `key`, as text. */
   render?: (row: T) => ReactNode;
   className?: string;
@@ -80,9 +84,16 @@ export function DataTable<T>({
   const current = Math.min(page, pageCount - 1);
   const pageRows = pageSize ? filtered.slice(current * pageSize, current * pageSize + pageSize) : filtered;
 
+  const expandable = !!(onToggleExpand && renderExpanded);
+  // On a phone the header is read by screen readers only; each cell shows its own label instead.
   const head = (
-    <thead className="border-b border-line bg-fg/[0.02] text-xs uppercase tracking-wide text-fg-subtle">
+    <thead className="border-b border-line bg-fg/[0.02] text-xs uppercase tracking-wide text-fg-subtle max-sm:sr-only">
       <tr>
+        {expandable ? (
+          <th scope="col" className="w-10 px-2 py-3">
+            <span className="sr-only">Details</span>
+          </th>
+        ) : null}
         {columns.map((col) => (
           <th
             key={col.key}
@@ -90,7 +101,7 @@ export function DataTable<T>({
             style={col.width ? { width: col.width } : undefined}
             className={`px-4 py-3 font-medium ${alignClass[col.align ?? 'left']} ${col.className ?? ''}`}
           >
-            {col.header ?? col.label}
+            {col.header || col.label || <span className="sr-only">{col.srHeader ?? 'Actions'}</span>}
           </th>
         ))}
       </tr>
@@ -112,6 +123,7 @@ export function DataTable<T>({
           <tbody className="divide-y divide-line">
             {Array.from({ length: 5 }, (_, i) => (
               <tr key={i}>
+                {expandable ? <td className="w-10 px-2 py-3" /> : null}
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
                     <span
@@ -168,24 +180,28 @@ export function DataTable<T>({
   }
 
   const rowClick = onToggleExpand ?? onRowClick;
+  // A visible label for each cell in the stacked phone layout (the header row is hidden there).
+  const cellLabel = (col: DataTableColumn<T>) =>
+    typeof col.header === 'string' ? col.header : typeof col.label === 'string' ? col.label : undefined;
 
   // relative: the header's sr-only labels are absolutely positioned and would otherwise escape the
   // scroller and widen the whole page on a phone.
   const table = (
     <div className="relative overflow-x-auto rounded-2xl border border-line bg-surface">
-      <table className="w-full min-w-full text-left text-sm">
+      <table className="w-full min-w-full text-left text-sm max-sm:block">
         {head}
-        <tbody className="divide-y divide-line">
+        <tbody className="divide-y divide-line max-sm:block">
           {pageRows.map((row) => {
             const key = rowKey(row);
             const expanded = expandedRowKey === key;
             return (
               <Fragment key={key}>
                 <tr
-                  className={`hover:bg-fg/[0.03] ${rowClick ? 'cursor-pointer' : ''}`}
+                  className={`hover:bg-fg/[0.03] max-sm:block max-sm:py-2 ${rowClick ? 'cursor-pointer' : ''}`}
                   onClick={rowClick ? () => rowClick(row) : undefined}
                   onKeyDown={
-                    rowClick
+                    // an expandable row has its own button; only a plain clickable row takes the keyboard itself
+                    rowClick && !expandable
                       ? (e) => {
                           // A row can hold its own buttons and links; Enter/Space there belongs to
                           // them, not to the row's click.
@@ -197,21 +213,37 @@ export function DataTable<T>({
                         }
                       : undefined
                   }
-                  tabIndex={rowClick ? 0 : undefined}
-                  aria-expanded={onToggleExpand && renderExpanded ? expanded : undefined}
+                  tabIndex={rowClick && !expandable ? 0 : undefined}
                 >
+                  {expandable ? (
+                    <td className="w-10 px-2 py-3 max-sm:float-right max-sm:py-1">
+                      <button
+                        type="button"
+                        aria-expanded={expanded}
+                        aria-label={expanded ? 'Hide details' : 'Show details'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleExpand!(row);
+                        }}
+                        className="grid size-8 place-items-center rounded-lg text-fg-muted transition-colors hover:bg-fg/5 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
+                      >
+                        <ChevronDown aria-hidden="true" className={`h-4 w-4 transition-transform duration-200 motion-reduce:transition-none ${expanded ? 'rotate-180' : ''}`} />
+                      </button>
+                    </td>
+                  ) : null}
                   {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`px-4 py-3 text-fg ${alignClass[col.align ?? 'left']} ${col.className ?? ''}`}
+                      data-label={cellLabel(col)}
+                      className={`px-4 py-3 text-fg ${alignClass[col.align ?? 'left']} ${col.className ?? ''} max-sm:flex max-sm:items-baseline max-sm:justify-between max-sm:gap-3 max-sm:py-1.5 max-sm:text-right max-sm:before:shrink-0 max-sm:before:text-left max-sm:before:text-xs max-sm:before:font-medium max-sm:before:text-fg-subtle max-sm:before:content-[attr(data-label)] max-sm:empty:hidden`}
                     >
                       {col.render ? col.render(row) : String((row as Record<string, unknown>)[col.key] ?? '')}
                     </td>
                   ))}
                 </tr>
                 {expanded && renderExpanded ? (
-                  <tr>
-                    <td colSpan={columns.length} className="bg-surface-2 px-4 py-3">
+                  <tr className="max-sm:block">
+                    <td colSpan={columns.length + (expandable ? 1 : 0)} className="bg-surface-2 px-4 py-3 max-sm:block">
                       {renderExpanded(row)}
                     </td>
                   </tr>

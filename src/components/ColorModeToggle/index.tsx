@@ -10,6 +10,8 @@ import { Monitor, Moon, Sun } from 'lucide-react';
 export type ColorMode = 'light' | 'dark' | 'system';
 
 const STORAGE_KEY = 'kv_mode';
+// Mode used until the person picks one; set by applyStoredColorMode(defaultMode).
+let fallback: ColorMode = 'system';
 const media = () => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null);
 
 function readStored(): ColorMode {
@@ -19,7 +21,7 @@ function readStored(): ColorMode {
   } catch {
     // storage blocked: fall through
   }
-  return 'system';
+  return fallback;
 }
 
 function resolve(mode: ColorMode): 'light' | 'dark' {
@@ -32,8 +34,11 @@ function apply(mode: ColorMode) {
   document.documentElement.dataset.kvMode = resolve(mode);
 }
 
-/** Apply the saved mode immediately (before React mounts). */
-export function applyStoredColorMode() {
+/** Apply the saved mode immediately (before React mounts). `defaultMode` is used until the person
+ * picks one with the toggle (default `system`); a console that ships light passes `'light'` so its
+ * `<html data-kv-mode="light">` is not overridden by the OS preference. */
+export function applyStoredColorMode(defaultMode: ColorMode = 'system') {
+  fallback = defaultMode;
   apply(readStored());
 }
 
@@ -74,12 +79,14 @@ export function ColorModeToggle({ className = '', showLabel = false }: ColorMode
   const [mode, setMode] = useColorMode();
   const Icon = icons[mode];
   const next = order[(order.indexOf(mode) + 1) % order.length];
+  // System gets its own icon (Monitor) and says so, or a click that lands on the OS's own mode looks like nothing happened.
+  const current = mode === 'system' ? 'System (follows your device)' : labels[mode];
   return (
     <button
       type="button"
       onClick={() => setMode(next)}
-      aria-label={`Theme: ${labels[mode]}. Switch to ${labels[next]}`}
-      title={`Theme: ${labels[mode]} (click for ${labels[next]})`}
+      aria-label={`Theme: ${current}. Switch to ${labels[next]}`}
+      title={`Theme: ${current}. Click for ${labels[next]}`}
       className={`inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-fg-muted hover:bg-fg/5 hover:text-fg ${className}`}
     >
       <Icon className="h-4 w-4" aria-hidden />

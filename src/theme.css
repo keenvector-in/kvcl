@@ -66,6 +66,8 @@
    * [data-kv-mode="light"] below flips them. */
   /* Readable text on a brand-filled surface (a store theme can flip it). */
   --color-on-brand: var(--kv-on-brand, #ffffff);
+  --color-on-accent: var(--kv-on-accent, #ffffff);
+  --color-on-warm: var(--kv-on-warm, #ffffff);
   --color-fg: var(--kv-fg, #ffffff);
   --color-fg-muted: var(--kv-fg-muted, hsl(215 20% 72%));
   --color-fg-subtle: var(--kv-fg-subtle, hsl(215 20% 65%));
@@ -91,9 +93,22 @@
   --color-warning: var(--kv-warning, #f5a524);
   --color-warning-soft: var(--kv-warning-soft, rgb(245 165 36 / 0.16));
   --color-danger: var(--kv-danger, #e5484d);
-  --color-danger-soft: var(--kv-danger-soft, rgb(229 72 77 / 0.16));
+  --color-danger-soft: var(--kv-danger-soft, #241012);
   --color-info: var(--kv-info, #3b82f6);
   --color-info-soft: var(--kv-info-soft, rgb(59 130 246 / 0.16));
+
+  /* Readable text on a tone's own tint (Badge, tinted notices): the tone mixed 55% with the
+   * mode's text colour, so it darkens in light mode and lightens in dark. >=5:1 on the tint for
+   * both brands' defaults (theme.contrast.test.tsx); a tenant's own brand/accent gets a
+   * computed --kv-brand-fg / --kv-accent-fg from ThemeProvider that reaches 4.5:1. */
+  --color-brand-fg: var(--kv-brand-fg, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 55%, var(--kv-fg, #ffffff)));
+  --color-accent-fg: var(--kv-accent-fg, color-mix(in oklab, var(--kv-accent, #14b8a6) 55%, var(--kv-fg, #ffffff)));
+  --color-success-fg: color-mix(in oklab, var(--kv-success, #12a150) 55%, var(--kv-fg, #ffffff));
+  --color-warning-fg: color-mix(in oklab, var(--kv-warning, #f5a524) 55%, var(--kv-fg, #ffffff));
+  --color-info-fg: color-mix(in oklab, var(--kv-info, #3b82f6) 55%, var(--kv-fg, #ffffff));
+  /* Destructive fill under white text (Button danger): 5.6:1 in both modes. `danger` itself
+   * stays the text colour, which has to be light in dark mode. */
+  --color-danger-fill: var(--kv-danger-fill, #c62a2f);
 
   /* Warm brand colour: KeenVector's amber highlight, KeenPlaza's orange. */
   --color-warm-500: var(--kv-warm, #f59e0b);
@@ -118,7 +133,7 @@
 [data-kv-mode="light"] {
   --kv-fg: hsl(222 39% 11%);
   --kv-fg-muted: hsl(215 16% 42%);
-  --kv-fg-subtle: hsl(215 15% 52%);
+  --kv-fg-subtle: #627084; /* 4.6:1 on sunken, 5.0:1 on white (was hsl(215 15% 52%), 3.9:1) */
   --kv-surface: #ffffff;
   --kv-surface-2: hsl(210 40% 98%);
   --kv-sunken: hsl(210 40% 96%);
@@ -127,9 +142,32 @@
   --kv-page: hsl(210 40% 98%);
   --kv-success-soft: #e3f8ec;
   --kv-warning-soft: #fff4e0;
+  /* Darker red in light mode: text-danger on bg-danger-soft 4.8:1, white on bg-danger 5.6:1. */
+  --kv-danger: #c62a2f;
   --kv-danger-soft: #fdeaea;
   --kv-info-soft: #e8f1ff;
   --kv-warm-soft: #fff0e6;
+}
+
+/* An explicit dark island inside a light page (a dark card, a ThemeProvider
+ * with mode "dark"): restate the dark defaults, which it would otherwise
+ * inherit from the light ancestor. Values match the fallbacks above. */
+[data-kv-mode="dark"] {
+  --kv-fg: #ffffff;
+  --kv-fg-muted: hsl(215 20% 72%);
+  --kv-fg-subtle: hsl(215 20% 65%);
+  --kv-surface: rgb(255 255 255 / 0.03);
+  --kv-surface-2: rgb(255 255 255 / 0.06);
+  --kv-sunken: rgb(0 0 0 / 0.2);
+  --kv-line: rgb(255 255 255 / 0.1);
+  --kv-line-strong: rgb(255 255 255 / 0.18);
+  --kv-page: hsl(222 47% 8%);
+  --kv-danger: #e5484d;
+  --kv-success-soft: rgb(18 161 80 / 0.16);
+  --kv-warning-soft: rgb(245 165 36 / 0.16);
+  --kv-danger-soft: #241012;
+  --kv-info-soft: rgb(59 130 246 / 0.16);
+  --kv-warm-soft: rgb(245 158 11 / 0.16);
 }
 
 /* ---------------------------------------------------------------------------
@@ -138,7 +176,8 @@
  *   <html data-kv-brand="keenplaza" data-kv-mode="dark">
  * Values come from keenplaza-claude/prototype/css/global.css — the prototype
  * stays the specification, these tokens reproduce it. */
-[data-kv-brand="keenplaza"] {
+[data-kv-brand="keenplaza"],
+[data-kv-brand="keenplaza"] [data-kv-mode="dark"] {
   --kv-font-display: "Bricolage Grotesque", "Inter", ui-sans-serif, system-ui, sans-serif;
   --kv-brand: #5b3df5;
   --kv-accent: #0fb5a6;
@@ -155,14 +194,15 @@
   --kv-line-strong: #33334f;
   --kv-fg: #f2f2f8;
   --kv-fg-muted: #a0a0b8;
-  --kv-fg-subtle: #70708c;
+  --kv-fg-subtle: #8a8aa6; /* was #70708c, 3.5:1 on surface-2 */
   --kv-success-soft: #10301f;
   --kv-warning-soft: #332508;
-  --kv-danger-soft: #3a1517;
+  --kv-danger-soft: #241012; /* text-danger on it 4.6:1 (was #3a1517, 4.1:1) */
   --kv-info-soft: #0f2340;
   --kv-warm-soft: #331a0a;
 }
-[data-kv-brand="keenplaza"][data-kv-mode="light"] {
+[data-kv-brand="keenplaza"][data-kv-mode="light"],
+[data-kv-brand="keenplaza"] [data-kv-mode="light"] {
   --kv-page: #f7f7fa;
   --kv-surface: #ffffff;
   --kv-surface-2: #fcfcfd;
@@ -170,8 +210,9 @@
   --kv-line: #e4e4ed;
   --kv-line-strong: #d1d1de;
   --kv-fg: #141428;
-  --kv-fg-muted: #71718a;
-  --kv-fg-subtle: #a0a0b3;
+  /* Both darkened for WCAG AA on sunken #f0f0f5 (were #71718a 4.2:1, #a0a0b3 2.3:1). */
+  --kv-fg-muted: #5c5c75;
+  --kv-fg-subtle: #6a6a82;
   --kv-success-soft: #e3f8ec;
   --kv-warning-soft: #fff4e0;
   --kv-danger-soft: #fdeaea;
@@ -198,6 +239,8 @@
   --color-logo-via: var(--kv-gradient-via, #4f46e5);
   --color-logo-to: var(--kv-gradient-to, #7c3aed);
   --color-on-brand: var(--kv-on-brand, #ffffff);
+  --color-on-accent: var(--kv-on-accent, #ffffff);
+  --color-on-warm: var(--kv-on-warm, #ffffff);
   --color-fg: var(--kv-fg, #ffffff);
   --color-fg-muted: var(--kv-fg-muted, hsl(215 20% 72%));
   --color-fg-subtle: var(--kv-fg-subtle, hsl(215 20% 65%));
@@ -215,9 +258,22 @@
   --color-warning: var(--kv-warning, #f5a524);
   --color-warning-soft: var(--kv-warning-soft, rgb(245 165 36 / 0.16));
   --color-danger: var(--kv-danger, #e5484d);
-  --color-danger-soft: var(--kv-danger-soft, rgb(229 72 77 / 0.16));
+  --color-danger-soft: var(--kv-danger-soft, #241012);
   --color-info: var(--kv-info, #3b82f6);
   --color-info-soft: var(--kv-info-soft, rgb(59 130 246 / 0.16));
+
+  /* Readable text on a tone's own tint (Badge, tinted notices): the tone mixed 55% with the
+   * mode's text colour, so it darkens in light mode and lightens in dark. >=5:1 on the tint for
+   * both brands' defaults (theme.contrast.test.tsx); a tenant's own brand/accent gets a
+   * computed --kv-brand-fg / --kv-accent-fg from ThemeProvider that reaches 4.5:1. */
+  --color-brand-fg: var(--kv-brand-fg, color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 55%, var(--kv-fg, #ffffff)));
+  --color-accent-fg: var(--kv-accent-fg, color-mix(in oklab, var(--kv-accent, #14b8a6) 55%, var(--kv-fg, #ffffff)));
+  --color-success-fg: color-mix(in oklab, var(--kv-success, #12a150) 55%, var(--kv-fg, #ffffff));
+  --color-warning-fg: color-mix(in oklab, var(--kv-warning, #f5a524) 55%, var(--kv-fg, #ffffff));
+  --color-info-fg: color-mix(in oklab, var(--kv-info, #3b82f6) 55%, var(--kv-fg, #ffffff));
+  /* Destructive fill under white text (Button danger): 5.6:1 in both modes. `danger` itself
+   * stays the text colour, which has to be light in dark mode. */
+  --color-danger-fill: var(--kv-danger-fill, #c62a2f);
   --shadow-soft: 0 1px 2px rgba(15, 20, 36, 0.04), 0 8px 24px -8px rgba(15, 20, 36, 0.12);
   --shadow-card: 0 1px 1px rgba(15, 20, 36, 0.04), 0 16px 40px -12px color-mix(in oklab, var(--kv-brand, hsl(239 84% 60%)) 25%, transparent);
 }

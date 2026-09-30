@@ -73,37 +73,54 @@ const INPUT: Partial<Record<FormFieldType, { type: string; autoComplete?: string
 };
 
 /** A store's Contact us form, rendered from its definition. */
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** 98250 12345, 098250 12345, +91 98250 12345 — an Indian mobile, the only kind the server accepts. */
+const indianMobile = (v: string) => /^[6-9]\d{9}$/.test(v.replace(/[\s()-]/g, '').replace(/^(\+?91|0)(?=\d{10}$)/, ''));
+
+/** What is wrong with one answer before it is sent, or undefined. The server checks again. */
+function problemOf(f: StoreFormField, v: string | string[] | undefined): string | undefined {
+  const blank = Array.isArray(v) ? v.length === 0 : !v?.trim();
+  if (blank) return f.required ? `${f.label} is required` : undefined;
+  if (typeof v !== 'string') return undefined;
+  const t = v.trim();
+  if (f.min_length && [...t].length < f.min_length) return `${f.label} needs at least ${f.min_length} characters`;
+  if (f.type === 'email' && !EMAIL.test(t)) return 'Enter an e-mail address like name@example.in';
+  if (f.type === 'phone' && !indianMobile(t)) return 'Enter a 10-digit mobile number';
+  if (f.type === 'number' && !Number.isFinite(Number(t))) return `${f.label} must be a number`;
+  return undefined;
+}
+
 export function ContactForm({ fields, onSubmit, submitting, error, submitLabel = 'Send message', preview, resetKey, className = '' }: ContactFormProps) {
   const [values, setValues] = useState<ContactAnswers>({});
   const [honeypot, setHoneypot] = useState('');
-  const [missing, setMissing] = useState<string[]>([]);
-  const [tooShort, setTooShort] = useState<string[]>([]);
+  // problems by field id; a field's message clears as soon as it is edited
+  const [problems, setProblems] = useState<Record<string, string>>({});
   const [lastReset, setLastReset] = useState(resetKey);
   if (resetKey !== lastReset) {
     setLastReset(resetKey);
     setValues({});
-    setMissing([]);
-    setTooShort([]);
+    setProblems({});
   }
 
   const set = (id: string, v: string | string[]) => {
     setValues((x) => ({ ...x, [id]: v }));
-    setMissing((m) => m.filter((k) => k !== id));
-    setTooShort((m) => m.filter((k) => k !== id));
+    setProblems(({ [id]: _, ...rest }) => rest);
   };
   const empty = (v?: string | string[]) => (Array.isArray(v) ? v.length === 0 : !v?.trim());
+  // A server message that starts with a question's label ("Phone is not a phone number") belongs
+  // under that question, not at the bottom of the form.
+  const serverField = error ? fields.find((f) => error.startsWith(`${f.label} `)) : undefined;
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
     if (preview) return;
-    const gaps = fields.filter((f) => f.required && empty(values[f.id])).map((f) => f.id);
-    setMissing(gaps);
-    const short = fields.filter((f) => {
-      const v = values[f.id];
-      return typeof v === 'string' && v.trim() && f.min_length && [...v.trim()].length < f.min_length;
-    });
-    setTooShort(short.map((f) => f.id));
-    if (gaps.length || short.length) return;
+    const found: Record<string, string> = {};
+    for (const f of fields) {
+      const p = problemOf(f, values[f.id]);
+      if (p) found[f.id] = p;
+    }
+    setProblems(found);
+    if (Object.keys(found).length) return;
     const answers: ContactAnswers = {};
     for (const f of fields) if (!empty(values[f.id])) answers[f.id] = values[f.id];
     onSubmit?.(answers, honeypot);
@@ -113,11 +130,7 @@ export function ContactForm({ fields, onSubmit, submitting, error, submitLabel =
     <form onSubmit={submit} noValidate className={className}>
       <div className="grid gap-x-4 sm:grid-cols-2">
         {fields.map((f) => {
-          const err = missing.includes(f.id)
-            ? `${f.label} is required`
-            : tooShort.includes(f.id)
-              ? `${f.label} needs at least ${f.min_length} characters`
-              : undefined;
+          const err = problems[f.id] ?? (serverField?.id === f.id ? error : undefined);
           const maxLength = f.max_length || textCap(f.type);
           const label = f.required ? `${f.label} *` : f.label;
           const cls = wide(f.type) ? 'sm:col-span-2' : '';
@@ -196,7 +209,7 @@ export function ContactForm({ fields, onSubmit, submitting, error, submitLabel =
         aria-hidden="true"
         className="absolute -left-[9999px] h-0 w-0 opacity-0"
       />
-      {error ? (
+      {error && !serverField ? (
         <p role="alert" className="mb-3 text-sm text-danger">
           {error}
         </p>

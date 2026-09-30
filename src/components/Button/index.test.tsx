@@ -67,5 +67,6 @@ describe('Button (merged KeenPlaza props)', () => {
       </Button>,
     );
     expect(screen.getByRole('button').className).toContain('w-full');
+    expect(screen.getByRole('button')).toHaveClass('bg-danger-fill', 'text-white');
   });
 });

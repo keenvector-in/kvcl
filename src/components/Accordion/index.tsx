@@ -32,7 +32,8 @@ export function Accordion({ title, description, icon, meta, defaultOpen, group, 
     <details
       name={group}
       open={defaultOpen}
-      className={`group/acc ${card ? 'rounded-2xl border border-line bg-surface text-fg shadow-soft' : 'rounded-xl border border-line bg-surface'} ${className}`}
+      // min-w-0: in a grid the summary's nowrap text would otherwise widen the column past a phone screen
+      className={`group/acc min-w-0 ${card ? 'rounded-2xl border border-line bg-surface text-fg shadow-soft' : 'rounded-xl border border-line bg-surface'} ${className}`}
     >
       <summary
         className={`flex cursor-pointer list-none items-center gap-2.5 rounded-[inherit] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-brand-400 [&::-webkit-details-marker]:hidden ${card ? 'px-5 py-4' : 'px-3 py-2.5'}`}

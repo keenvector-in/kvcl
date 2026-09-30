@@ -37,6 +37,22 @@ export interface CartSummary {
   tax_minor: number
   total_minor: number
   offers: { id: string; name: string; discount_minor: number }[]
+  /** Set when the cart was read with a delivery method: its fee, already inside total_minor. */
+  delivery_method?: string
+  shipping_minor?: number
+  /** Every delivery method the store offers, priced for this cart by pricing — show these, never decide "free" yourself. */
+  delivery_options?: DeliveryQuote[]
+}
+
+export interface DeliveryQuote {
+  key: string
+  label: string
+  /** what this cart would pay for the method, after any free-delivery threshold */
+  fee_minor: number
+  /** the method normally costs something but this cart gets it free */
+  free: boolean
+  /** how much more (after discounts) would make it free; absent when already free or no threshold */
+  amount_to_free_minor?: number
 }
 
 export interface CartView {
@@ -49,7 +65,9 @@ export interface CartView {
 // data) — unlike catalog/pricing/inventory reads, nothing here is public.
 export function cartApi(http: HttpClient) {
   return {
-    getActive: (tenantId: string) => http.request<CartView>('/v1/carts', { tenantId }),
+    /** deliveryMethod prices that method's fee into the total — the checkout review step's amount to pay. */
+    getActive: (tenantId: string, deliveryMethod?: string) =>
+      http.request<CartView>(`/v1/carts${deliveryMethod ? `?delivery_method=${encodeURIComponent(deliveryMethod)}` : ''}`, { tenantId }),
 
     /** Applies a coupon on the cart; pricing validates it. 422 coupon_invalid / coupon_not_combinable / empty_cart. */
     applyCoupon: (tenantId: string, cartId: string, code: string) =>

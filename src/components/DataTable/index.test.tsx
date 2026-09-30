@@ -83,4 +83,38 @@ describe('DataTable', () => {
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'zzz' } });
     expect(screen.getByText(/No results for/)).toBeInTheDocument();
   });
+
+  it('gives a column without a visible header a screen-reader name', () => {
+    const cols = [...columns, { key: 'actions', header: '', render: () => <button>Suspend</button> }, { key: 'pick', srHeader: 'Select', render: () => null }];
+    render(<DataTable columns={cols} rows={rows} rowKey={rowKey} />);
+    const headers = screen.getAllByRole('columnheader');
+    expect(headers[2]).toHaveTextContent('Actions');
+    expect(headers[2].querySelector('.sr-only')).not.toBeNull();
+    expect(headers[3]).toHaveTextContent('Select');
+    expect(headers[0]).toHaveTextContent('Tenant');
+  });
+
+  it('expands a row with a real button, not an interactive row', () => {
+    const toggle = vi.fn();
+    const { rerender } = render(
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} expandedRowKey={null} onToggleExpand={toggle} renderExpanded={(r) => <p>details of {r.name}</p>} />,
+    );
+    const buttons = screen.getAllByRole('button', { name: 'Show details' });
+    expect(buttons[0]).toHaveAttribute('aria-expanded', 'false');
+    expect(buttons[0].closest('tr')).not.toHaveAttribute('aria-expanded');
+    expect(buttons[0].closest('tr')).not.toHaveAttribute('tabindex');
+    fireEvent.click(buttons[0]);
+    expect(toggle).toHaveBeenCalledTimes(1); // the row's own click must not fire a second toggle
+    rerender(
+      <DataTable columns={columns} rows={rows} rowKey={rowKey} expandedRowKey={rowKey(rows[0])} onToggleExpand={toggle} renderExpanded={(r) => <p>details of {r.name}</p>} />,
+    );
+    expect(screen.getByRole('button', { name: 'Hide details' })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText(`details of ${rows[0].name}`)).toBeInTheDocument();
+  });
+
+  it('labels each cell for the stacked phone layout', () => {
+    render(<DataTable columns={columns} rows={rows} rowKey={rowKey} />);
+    expect(screen.getAllByRole('cell')[0]).toHaveAttribute('data-label');
+  });
 });
+

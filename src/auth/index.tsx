@@ -1,6 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { Fragment, createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Spinner } from '../components/Spinner/index';
+import { Button } from '../components/Button/index';
+import { fetchOrOffline, setAuthRefresher } from '../api/client';
 
 export type Role = 'super_admin' | 'business_admin' | 'business_user';
 
@@ -25,6 +27,11 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const REFRESH_KEY = 'kv_refresh_token';
+// Who the shared refresh token belongs to ("user:tenant"). Tabs share one
+// refresh token, so a sign-in as someone else in another tab changes this key
+// and every other tab resets instead of acting on the new tenant as the old user.
+const IDENTITY_KEY = 'kv_session_identity';
+const identity = (u: AuthUser) => `${u.id}:${u.tenant_id ?? ''}`;
 
 async function parseErrorMessage(res: Response): Promise<string> {
   try {
@@ -59,10 +66,22 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   const [loading, setLoading] = useState(true);
   const [sessionExpired, setSessionExpired] = useState(false);
   const inFlight = useRef<Promise<string> | null>(null);
+  const userRef = useRef<AuthUser | null>(null);
+  // Bumped when the signed-in identity changes under this tab: children are
+  // remounted so no state from the previous user/tenant survives.
+  const [generation, setGeneration] = useState(0);
+
+  const adoptUser = useCallback((next: AuthUser | null) => {
+    const prev = userRef.current;
+    if (prev && next && identity(prev) !== identity(next)) setGeneration((g) => g + 1);
+    userRef.current = next;
+    setUser(next);
+    if (next) localStorage.setItem(IDENTITY_KEY, identity(next));
+  }, []);
 
   const fetchMe = useCallback(
     async (token: string) => {
-      const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
+      const res = await fetchOrOffline(`${apiBaseUrl}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error(await parseErrorMessage(res));
@@ -80,7 +99,7 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
     const run = async () => {
       const refreshToken = localStorage.getItem(REFRESH_KEY);
       if (!refreshToken) throw new SessionExpiredError();
-      const res = await fetch(`${apiBaseUrl}/api/auth/refresh`, {
+      const res = await fetchOrOffline(`${apiBaseUrl}/api/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh_token: refreshToken }),
@@ -93,7 +112,11 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       if (!res.ok) throw new Error(await parseErrorMessage(res));
       const data = (await res.json()) as { access_token: string; refresh_token: string };
       localStorage.setItem(REFRESH_KEY, data.refresh_token);
+      // The stored token may have been written by another tab for another
+      // user, so always re-read who this session now is.
+      const me = await fetchMe(data.access_token);
       setAccessToken(data.access_token);
+      adoptUser(me);
       return data.access_token;
     };
     const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
@@ -102,13 +125,42 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
     });
     inFlight.current = p;
     return p;
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, fetchMe, adoptUser]);
 
   const expire = useCallback(() => {
     setAccessToken(null);
+    userRef.current = null;
     setUser(null);
     setSessionExpired(true);
   }, []);
+
+  // kvcl's apiClient retries a 401 once with a token from here.
+  useEffect(() => {
+    setAuthRefresher(() =>
+      refresh().catch((err) => {
+        if (err instanceof SessionExpiredError) expire();
+        throw err;
+      }),
+    );
+    return () => setAuthRefresher(null);
+  }, [refresh, expire]);
+
+  // Another tab signed out, or signed in as someone else.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === REFRESH_KEY && e.newValue === null && userRef.current) {
+        setAccessToken(null);
+        userRef.current = null;
+        setUser(null);
+      } else if (e.key === IDENTITY_KEY && e.newValue && userRef.current && e.newValue !== identity(userRef.current)) {
+        refresh().catch((err) => {
+          if (err instanceof SessionExpiredError) expire();
+        });
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, [refresh, expire]);
 
   // On load, a stored refresh token (survives a page reload; the access
   // token deliberately does not) is exchanged for a fresh session.
@@ -118,13 +170,11 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       return;
     }
     refresh()
-      .then(fetchMe)
-      .then(setUser)
       .catch((err) => {
         if (err instanceof SessionExpiredError) setSessionExpired(true);
       })
       .finally(() => setLoading(false));
-  }, [refresh, fetchMe]);
+  }, [refresh]);
 
   // Keep the session alive: renew shortly before the access token expires,
   // and again when the tab comes back (background timers are throttled, and
@@ -150,7 +200,7 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
 
   const login = useCallback(
     async (email: string, password: string) => {
-      const res = await fetch(`${apiBaseUrl}/api/auth/login`, {
+      const res = await fetchOrOffline(`${apiBaseUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -159,16 +209,18 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
       const data = (await res.json()) as { access_token: string; refresh_token: string; user: AuthUser };
       localStorage.setItem(REFRESH_KEY, data.refresh_token);
       setAccessToken(data.access_token);
-      setUser(data.user);
+      adoptUser(data.user);
       setSessionExpired(false);
     },
-    [apiBaseUrl],
+    [apiBaseUrl, adoptUser],
   );
 
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem(REFRESH_KEY);
     localStorage.removeItem(REFRESH_KEY);
+    localStorage.removeItem(IDENTITY_KEY);
     setAccessToken(null);
+    userRef.current = null;
     setUser(null);
     if (refreshToken) {
       // Best-effort — the session is gone client-side regardless of whether
@@ -182,7 +234,9 @@ export function AuthProvider({ apiBaseUrl, children }: { apiBaseUrl: string; chi
   }, [apiBaseUrl]);
 
   return (
-    <AuthContext.Provider value={{ user, accessToken, loading, sessionExpired, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, accessToken, loading, sessionExpired, login, logout }}>
+      <Fragment key={generation}>{children}</Fragment>
+    </AuthContext.Provider>
   );
 }
 
@@ -196,11 +250,11 @@ export function useAuth(): AuthContextValue {
  * in as the wrong role — never a redirect loop for an authenticated user
  * who simply lacks access. */
 export function ProtectedRoute({ allow, children }: { allow?: Role[]; children: ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ink-950">
+      <div className="flex min-h-screen items-center justify-center bg-page">
         <Spinner />
       </div>
     );
@@ -210,8 +264,11 @@ export function ProtectedRoute({ allow, children }: { allow?: Role[]; children: 
   }
   if (allow && !allow.includes(user.role)) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ink-950 text-ink-100">
-        <p className="text-sm text-ink-300">Your account does not have access to this page.</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-page text-fg">
+        <p className="text-sm text-fg-muted">Your account does not have access to this page.</p>
+        <Button variant="secondary" size="sm" onClick={() => void logout()}>
+          Sign out
+        </Button>
       </div>
     );
   }

@@ -1,5 +1,11 @@
 # Badge changelog
 
+## 1.3.0 — 2026-09-30
+
+- Label never wraps (`whitespace-nowrap`): "not connected" stays on one line; let the neighbouring title shrink instead.
+- Light-mode `danger`/`error` tone is darker via the theme token (`#c62a2f`, 4.8:1 on `danger-soft`).
+- Tone text uses the new `*-fg` tokens (`text-brand-fg`, `text-accent-fg`, `text-success-fg`, `text-warning-fg`, `text-info-fg`): the tone mixed with the mode's text colour, 5:1 or better on the tint in both modes (success was 3.0:1, accent 2.1:1, warning 1.9:1 in light; brand 2.5:1 in dark).
+
 ## 1.2.0 — 2026-09-20
 
 - `warning` uses the shared `warning`/`warning-soft` tokens instead of raw amber utilities.

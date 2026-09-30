@@ -1,5 +1,11 @@
 # WorkflowBuilder changelog
 
+## 1.5.0 — 2026-09-28
+
+- Undo now covers edge deletions and node moves (a checkpoint is taken on edge removal and at drag start).
+- Deleting a step from its toolbar after other edits no longer undoes back to a stale graph.
+- Clicking "+" in the step list with a step selected places the new step below it and connects the two; with nothing selected it no longer lands on top of an existing step.
+
 ## 1.4.0 — 2026-09-18
 
 - Step editor offers click-to-insert variable chips (`{{contact.name}}`, `{{contact.verify_code}}`, …) on Reply, Send WhatsApp and Update Contact.

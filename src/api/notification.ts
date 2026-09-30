@@ -22,7 +22,7 @@ export interface NotifyTemplate {
 }
 
 /** `sent` reached the provider; `failed` it refused; `skipped` means we never tried, and `detail` says why. */
-export type DeliveryStatus = 'sent' | 'failed' | 'skipped'
+export type DeliveryStatus = 'pending' | 'sent' | 'failed' | 'skipped'
 
 export interface NotifyDelivery {
   id: string

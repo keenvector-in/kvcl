@@ -28,4 +28,26 @@ describe('ColorModeToggle', () => {
     applyStoredColorMode();
     expect(document.documentElement.dataset.kvMode).toBe('dark');
   });
+
+  it('uses the given default until a mode is picked, so a light console stays light', () => {
+    document.documentElement.dataset.kvMode = 'dark';
+    applyStoredColorMode('light');
+    expect(document.documentElement.dataset.kvMode).toBe('light');
+    render(<ColorModeToggle />);
+    expect(screen.getByRole('button')).toHaveAccessibleName(/Theme: Light/);
+    localStorage.setItem('kv_mode', 'dark');
+    applyStoredColorMode('light');
+    expect(document.documentElement.dataset.kvMode).toBe('dark');
+    applyStoredColorMode(); // reset the module default for other tests
+  });
+
+  it('marks the system state apart from light and dark', () => {
+    render(<ColorModeToggle />);
+    const btn = screen.getByRole('button');
+    expect(btn).toHaveAttribute('title', 'Theme: System (follows your device). Click for Light');
+    expect(btn).toHaveAccessibleName('Theme: System (follows your device). Switch to Light');
+    fireEvent.click(btn);
+    expect(btn).toHaveAttribute('title', 'Theme: Light. Click for Dark');
+  });
 });
+

@@ -12,15 +12,50 @@ export class ApiError extends Error {
   }
 }
 
-export const errorMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
+/** Shown instead of the browser's raw "Failed to fetch" when the request never got a response. */
+export const NETWORK_ERROR_MESSAGE = "Can't reach KeenVector right now. Check your connection and try again.";
+
+// fetch rejects with a TypeError only when there was no response (offline, DNS, CORS, server down);
+// the wording differs per browser: "Failed to fetch", "NetworkError when…", "Load failed".
+const isNetworkError = (err: unknown) => err instanceof TypeError && /fetch|network|load failed/i.test(err.message);
+
+/** `fetch` that turns a network failure into `ApiError(0, NETWORK_ERROR_MESSAGE, 'network')`. */
+export async function fetchOrOffline(input: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    if (isNetworkError(err)) throw new ApiError(0, NETWORK_ERROR_MESSAGE, 'network');
+    throw err;
+  }
+}
+
+export const errorMessage = (err: unknown) =>
+  isNetworkError(err) ? NETWORK_ERROR_MESSAGE : err instanceof Error ? err.message : String(err);
+
+// Set by kvcl's AuthProvider: renews the session and resolves to a new access token.
+let refresher: (() => Promise<string>) | null = null;
+
+/** Lets `apiClient` retry a 401 once with a renewed token. AuthProvider registers itself; there is
+ * normally no need to call this directly. */
+export function setAuthRefresher(fn: (() => Promise<string>) | null) {
+  refresher = fn;
+}
 
 export function apiClient(baseUrl: string, basePath: string) {
   async function request<T>(token: string | null, method: string, path: string, body?: unknown): Promise<T> {
-    const res = await fetch(`${baseUrl}${basePath}${path}`, {
-      method,
-      headers: { Authorization: `Bearer ${token ?? ''}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    const send = (t: string | null) =>
+      fetchOrOffline(`${baseUrl}${basePath}${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${t ?? ''}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }) },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    let res = await send(token);
+    // An expired access token (a sleeping laptop, a throttled timer): renew once and retry. If the
+    // renewal fails, the original 401 is surfaced below.
+    if (res.status === 401 && token && refresher) {
+      const fresh = await refresher().catch(() => null);
+      if (fresh) res = await send(fresh);
+    }
     if (!res.ok) {
       const err = (await res.json().catch(() => null)) as { message?: string; error_code?: string } | null;
       throw new ApiError(res.status, err?.message ?? `request failed (${res.status})`, err?.error_code ?? '');

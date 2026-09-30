@@ -42,3 +42,22 @@ describe('Modal', () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 });
+
+describe('Modal focus trap', () => {
+  it('wraps Tab from the last focusable to the first and Shift+Tab back', () => {
+    render(
+      <Modal title="Trap" onClose={() => {}}>
+        <button>First</button>
+        <button>Last</button>
+      </Modal>,
+    );
+    const items = Array.from(screen.getByRole('dialog').querySelectorAll('button'));
+    const first = items[0];
+    const last = items[items.length - 1];
+    last.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(first).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(last).toHaveFocus();
+  });
+});

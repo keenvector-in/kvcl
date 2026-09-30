@@ -17,14 +17,14 @@ const base =
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    'bg-gradient-to-r from-logo-from via-logo-via to-logo-to text-white shadow-soft hover:shadow-card hover:brightness-110 active:brightness-95 active:scale-[0.98]',
+    'bg-gradient-to-r from-logo-from via-logo-via to-logo-to text-on-brand shadow-soft hover:shadow-card hover:brightness-110 active:brightness-95 active:scale-[0.98]',
   secondary: 'bg-fg/5 text-fg border border-line hover:bg-fg/10',
   ghost: 'text-fg-muted hover:text-fg hover:bg-fg/5',
   outline: 'bg-surface text-fg border border-line-strong hover:border-brand-400 hover:text-brand-500',
-  accent: 'bg-accent-500 text-white shadow-soft hover:bg-accent-600',
+  accent: 'bg-accent-500 text-on-accent shadow-soft hover:bg-accent-600',
   /** The warm brand colour — KeenPlaza's orange CTA, a store's own accent. */
-  warm: 'bg-warm-500 text-white shadow-soft hover:brightness-95',
-  danger: 'bg-danger text-white shadow-soft hover:brightness-95',
+  warm: 'bg-warm-500 text-on-warm shadow-soft hover:brightness-95',
+  danger: 'bg-danger-fill text-white shadow-soft hover:brightness-95',
   success: 'bg-success text-white shadow-soft hover:brightness-95',
   link: 'text-brand-500 underline underline-offset-4 hover:text-brand-600',
 };

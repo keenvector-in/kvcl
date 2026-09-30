@@ -9,11 +9,13 @@ export interface TopbarProps {
   actions?: ReactNode;
   /** Shows a menu button on small screens that opens the sidebar. AppShell passes this for you. */
   onMenu?: () => void;
+  /** `h1` (default) when the bar names the page; `div` when each screen renders its own h1 below. */
+  titleAs?: 'h1' | 'div';
   className?: string;
 }
 
 /** Sticky page header: optional breadcrumb + title on the left, actions on the right. */
-export function Topbar({ title, crumb, actions, onMenu, className = '' }: TopbarProps) {
+export function Topbar({ title, crumb, actions, onMenu, titleAs: Title = 'h1', className = '' }: TopbarProps) {
   return (
     <header
       className={`sticky top-0 z-40 flex min-h-[62px] items-center gap-4 border-b border-line bg-surface px-4 py-3 text-fg sm:px-6 ${className}`}
@@ -30,9 +32,9 @@ export function Topbar({ title, crumb, actions, onMenu, className = '' }: Topbar
       ) : null}
       <div className="min-w-0 grow">
         {crumb ? <div className="truncate text-xs text-fg-muted">{crumb}</div> : null}
-        <h1 className="truncate text-xl font-bold tracking-tight">{title}</h1>
+        <Title className="truncate text-xl font-bold tracking-tight">{title}</Title>
       </div>
-      {actions ? <div className="flex items-center gap-3">{actions}</div> : null}
+      {actions ? <div className="flex items-center gap-3 max-sm:gap-1.5">{actions}</div> : null}
     </header>
   );
 }

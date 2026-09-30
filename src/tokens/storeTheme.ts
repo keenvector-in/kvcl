@@ -52,6 +52,22 @@ const luminance = (c: string) => {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
 }
 
+const INK = '#141428'
+const WHITE = '#ffffff'
+/** WCAG contrast ratio between two colours. */
+export const contrast = (a: string, b: string) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+/** White or ink, whichever reads better on c. */
+const onColor = (c: string) => (contrast(c, WHITE) >= contrast(c, INK) ? WHITE : INK)
+/** Push c away from the text colour until the text on it passes 4.5:1 (normal-size button text). */
+function readableUnder(text: string, c: string) {
+  const toward = text === WHITE ? '#000000' : WHITE
+  for (let i = 0; i < 12 && contrast(text, c) < 4.5; i++) c = mix(c, toward, 0.1)
+  return c
+}
+
 function ramp(base: string): Record<number, string> {
   return {
     50: mix(base, '#ffffff', 0.94),
@@ -78,14 +94,20 @@ export function themeVariables(theme?: StoreTheme | null): Record<string, string
   if (!isValidTheme(theme)) return null
   const p = ramp(theme.primary)
   const [r, g, b] = hex2rgb(theme.primary)
+  // Primary buttons put one text colour over the whole primary → accent gradient, so the text is
+  // chosen from the primary and the gradient's later stops are shifted until that text still reads
+  // (a yellow accent under white text was 1.5:1).
+  const onBrand = onColor(theme.primary)
   const vars: Record<string, string> = {
     '--kv-brand': theme.primary,
     '--kv-accent': theme.secondary,
     '--kv-warm': theme.accent,
-    '--kv-gradient-from': theme.primary,
-    '--kv-gradient-via': mix(theme.primary, theme.accent, 0.5),
-    '--kv-gradient-to': theme.accent,
-    '--kv-on-brand': luminance(theme.primary) > 0.55 ? '#141428' : '#ffffff',
+    '--kv-gradient-from': readableUnder(onBrand, theme.primary),
+    '--kv-gradient-via': readableUnder(onBrand, mix(theme.primary, theme.accent, 0.5)),
+    '--kv-gradient-to': readableUnder(onBrand, theme.accent),
+    '--kv-on-brand': onBrand,
+    '--kv-on-accent': onColor(theme.secondary),
+    '--kv-on-warm': onColor(theme.accent),
     '--kv-brand-shadow': `0 8px 22px rgba(${r},${g},${b},0.28)`
   }
   Object.entries(p).forEach(([k, v]) => (vars[`--kv-brand-${k}`] = v))

@@ -42,6 +42,9 @@ export default defineConfig({
           globals: true,
           setupFiles: ['./vitest.setup.ts'],
           include: ['src/**/*.test.tsx'],
+          // The WorkflowBuilder (xyflow) tests type key by key and take several seconds when the
+          // whole suite runs in parallel; 5 s timed them out on a busy machine.
+          testTimeout: 20_000,
         },
       },
       {

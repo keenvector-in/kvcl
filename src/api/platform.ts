@@ -65,7 +65,9 @@ export function platformApi(http: HttpClient) {
     /** onboards a tenant owned by the lead's phone; name defaults to the business name */
     convertLead: (id: string, slug: string, name?: string) =>
       http.request<Tenant>(`/v1/platform/leads/${id}/convert`, { method: 'POST', body: { slug, name } }),
-    auditLog: (limit = 100) => http.request<{ entries: AuditEntry[] }>(`/v1/platform/audit-log?limit=${limit}`)
+    /** changesOnly leaves out reads ("….list"), so the page holds real changes. */
+    auditLog: (limit = 100, changesOnly = false) =>
+      http.request<{ entries: AuditEntry[] }>(`/v1/platform/audit-log?limit=${limit}${changesOnly ? '&changes_only=1' : ''}`)
   }
 }
 

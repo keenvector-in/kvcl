@@ -84,7 +84,7 @@ export function ProductCard({
           </div>
         ) : null}
         {action && !overlay ? (
-          <div className="absolute inset-x-2.5 bottom-2.5 translate-y-2 opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100 motion-reduce:transition-none [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
+          <div className="absolute inset-x-2.5 bottom-2.5 translate-y-2 opacity-0 transition duration-200 group-hover/card:translate-y-0 group-hover/card:opacity-100 group-focus-within/card:translate-y-0 group-focus-within/card:opacity-100 group-focus-within/card:duration-0 motion-reduce:transition-none [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100">
             {action}
           </div>
         ) : null}

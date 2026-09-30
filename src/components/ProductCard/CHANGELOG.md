@@ -1,5 +1,9 @@
 # ProductCard changelog
 
+## 1.3.0 — 2026-09-30
+
+- The quick action shows at once when it takes keyboard focus (no 200 ms fade while already focused).
+
 
 ## 1.2.0 — 2026-09-25
 

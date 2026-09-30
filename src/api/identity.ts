@@ -126,13 +126,17 @@ export function identityApi(http: HttpClient) {
     // Revoke server-side first, then clear local storage — logout order
     // matters (frontend-auth.md#logout): a logout that only clears local
     // storage leaves a still-valid refresh token usable by anyone who
-    // captured it earlier.
+    // captured it earlier. If the revoke call fails, local tokens are cleared
+    // anyway: the shopper asked to be logged out on this device.
     logout: async () => {
       const refreshToken = getRefreshTokenForLogout()
-      if (refreshToken) {
-        await http.request<void>('/v1/auth/logout', { method: 'POST', body: { refresh_token: refreshToken } })
+      try {
+        if (refreshToken) {
+          await http.request<void>('/v1/auth/logout', { method: 'POST', body: { refresh_token: refreshToken } })
+        }
+      } finally {
+        clearTokens()
       }
-      clearTokens()
     },
 
     me: () => http.request<Me>('/v1/me')

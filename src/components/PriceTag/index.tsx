@@ -23,19 +23,21 @@ export function PriceTag({ priceMinor, mrpMinor, currency = 'INR', size = 'md', 
   const discounted = mrpMinor !== undefined && mrpMinor > priceMinor;
   const pct = discounted ? Math.round(((mrpMinor - priceMinor) / mrpMinor) * 100) : 0;
   return (
-    <span className={`inline-flex flex-wrap items-baseline gap-2 ${className}`}>
-      <span className={`font-extrabold tracking-tight tabular-nums text-fg ${SIZE[size]}`}>
-        {formatMinor(priceMinor, currency)}
-      </span>
-      {discounted ? (
-        <>
+    // Price and MRP never wrap apart; the "% off" badge always takes its own line, so cards side by
+    // side keep their prices on the same baseline instead of wrapping differently.
+    <span className={`inline-flex flex-col items-start gap-1 ${className}`}>
+      <span className="inline-flex items-baseline gap-2 whitespace-nowrap">
+        <span className={`font-extrabold tracking-tight tabular-nums text-fg ${SIZE[size]}`}>
+          {formatMinor(priceMinor, currency)}
+        </span>
+        {discounted ? (
           <span className="text-sm text-fg-subtle line-through tabular-nums">
             <span className="sr-only">MRP </span>
             {formatMinor(mrpMinor, currency)}
           </span>
-          <span className="rounded-md bg-success-soft px-1.5 py-0.5 text-sm font-bold text-success">{pct}% off</span>
-        </>
-      ) : null}
+        ) : null}
+      </span>
+      {discounted ? <span className="rounded-md bg-success-soft px-1.5 py-0.5 text-sm font-bold text-success">{pct}% off</span> : null}
     </span>
   );
 }

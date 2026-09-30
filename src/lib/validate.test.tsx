@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hexError, httpsUrlError, phoneError, pincodeError, required, rupeesError, slugError, wholeNumberError } from './validate';
+import { hexError, httpsUrlError, phone10, phoneError, pincodeError, required, rupeesError, slugError, wholeNumberError } from './validate';
 
 describe('validate', () => {
   it('lets empty values through (required is separate)', () => {
@@ -16,6 +16,13 @@ describe('validate', () => {
     expect(phoneError('12345')).toBeDefined();
     expect(pincodeError('411001')).toBeUndefined();
     expect(pincodeError('011001')).toBeDefined();
+  });
+  it('phone10 normalises pasted numbers', () => {
+    for (const v of ['+91 98765 43210', '919876543210', '+91-98765-43210', '09876543210', '98765-43210']) expect(phone10(v)).toBe('9876543210');
+    expect(phone10('98765432101')).toBe('9876543210');
+    expect(phone10('0091 98765 43210')).toBe('9876543210');
+    expect(phone10('91234567890')).toBe('9123456789');
+    expect(phone10('9123456789')).toBe('9123456789');
   });
   it('hex and url', () => {
     expect(hexError('#0e9f6e')).toBeUndefined();

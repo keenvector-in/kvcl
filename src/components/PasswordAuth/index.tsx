@@ -17,6 +17,25 @@ import type { ForgotPasswordResponse, Session, TokenPair } from '../../api/ident
 /** Identity's rule, mirrored here so the field can say so before the request goes out. */
 export const MIN_PASSWORD_LENGTH = 8;
 
+// What identity's error codes mean to the person at the form. Anything unmapped keeps the server's
+// wording, with a capital letter — never a raw lowercase sentence.
+const ERROR_COPY: Record<string, string> = {
+  invalid_credentials: 'That email and password don’t match. Check both, or reset your password.',
+  weak_password: `Choose a longer password — at least ${MIN_PASSWORD_LENGTH} characters.`,
+  email_taken: 'That email is already used by another account.',
+  invalid_reset_token: 'This reset link has expired or was already used. Ask for a new one.',
+  user_inactive: 'This account is switched off. Contact support.',
+  too_many_requests: 'Too many tries. Wait a minute and try again.',
+};
+
+export function errorText(err: unknown, fallback = 'Something went wrong, try again.'): string {
+  if (!(err instanceof Error)) return fallback;
+  const code = (err as Error & { code?: string }).code;
+  if (code && ERROR_COPY[code]) return ERROR_COPY[code];
+  if (err.message === 'Failed to fetch') return 'Can’t reach the server. Check your connection and try again.';
+  return err.message ? err.message.charAt(0).toUpperCase() + err.message.slice(1) : fallback;
+}
+
 function useSubmit<T>(run: () => Promise<T>, onDone: (result: T) => void) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +52,7 @@ function useSubmit<T>(run: () => Promise<T>, onDone: (result: T) => void) {
       },
       (err: unknown) => {
         setPending(false);
-        setError(err instanceof Error ? err.message : 'Something went wrong, try again.');
+        setError(errorText(err));
       },
     );
   };
@@ -434,10 +453,13 @@ export function LoginDetailsPanel({ me, setEmail, changePassword, onUpdated, ses
   return (
     <div className="flex flex-col gap-5">
       <div>
+        {/* an account made with email alone has no phone: say nothing rather than a blank */}
+        {me.phone ? (
+          <p className="mb-1 text-[13px] text-fg-muted">
+            Mobile number <b className="text-fg">{me.phone}</b>
+          </p>
+        ) : null}
         <p className="text-[13px] text-fg-muted">
-          Mobile number <b className="text-fg">{me.phone}</b>
-        </p>
-        <p className="mt-1 text-[13px] text-fg-muted">
           Email {me.email ? <b className="text-fg">{me.email}</b> : <span className="text-fg-subtle">not set yet</span>}
         </p>
         <form className="mt-3 flex flex-col gap-3" onSubmit={submit} noValidate>

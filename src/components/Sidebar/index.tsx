@@ -62,7 +62,7 @@ export function Sidebar<K extends string>({
         <div className="min-w-0">
           <b className="block truncate text-lg font-semibold tracking-tight text-white">{brand}</b>
           {subtitle ? (
-            <small className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-rail-fg/60">
+            <small className="block text-[9px] font-semibold uppercase tracking-[0.14em] text-rail-fg/80">
               {subtitle}
             </small>
           ) : null}
@@ -72,7 +72,7 @@ export function Sidebar<K extends string>({
         {groups.map((g, gi) => (
           <div key={g.label ?? gi}>
             {g.label ? (
-              <div className="px-5 pb-1.5 pt-4 text-[10px] font-extrabold uppercase tracking-[0.14em] text-rail-fg/55">
+              <div className="px-5 pb-1.5 pt-4 text-[10px] font-extrabold uppercase tracking-[0.14em] text-rail-fg/80">
                 {g.label}
               </div>
             ) : null}

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiError, apiClient } from './client';
+import { ApiError, NETWORK_ERROR_MESSAGE, apiClient, errorMessage } from './client';
 
 const json = (status: number, body: unknown) => new Response(status === 204 ? null : JSON.stringify(body), { status });
 
@@ -34,5 +34,30 @@ describe('apiClient', () => {
   it('falls back to a status message on a non-JSON error body', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('boom', { status: 502 })));
     await expect(apiClient('', '/api/x').get('t')).rejects.toThrow('request failed (502)');
+  });
+
+  it('maps a network failure to ApiError(0) with a readable message', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    const err = await apiClient('', '/api/x').get('t').catch((e) => e);
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err).toMatchObject({ status: 0, code: 'network', message: NETWORK_ERROR_MESSAGE });
+    expect(NETWORK_ERROR_MESSAGE).toBe("Can't reach KeenVector right now. Check your connection and try again.");
+  });
+
+  it('lets an abort through unchanged', async () => {
+    const abort = new DOMException('aborted', 'AbortError');
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abort));
+    await expect(apiClient('', '/api/x').get('t')).rejects.toBe(abort);
+  });
+});
+
+describe('errorMessage', () => {
+  it('replaces raw browser network errors, keeps everything else', () => {
+    for (const raw of ['Failed to fetch', 'NetworkError when attempting to fetch resource.', 'Load failed']) {
+      expect(errorMessage(new TypeError(raw))).toBe(NETWORK_ERROR_MESSAGE);
+    }
+    expect(errorMessage(new TypeError('x is not a function'))).toBe('x is not a function');
+    expect(errorMessage(new ApiError(409, 'slug taken'))).toBe('slug taken');
+    expect(errorMessage('plain')).toBe('plain');
   });
 });

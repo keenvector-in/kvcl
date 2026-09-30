@@ -15,6 +15,19 @@ export const required = (v: string | undefined | null, what = 'This field') =>
 export const slugError = (v: string) =>
   blank(v) || SLUG_RE.test(v) ? undefined : 'Lowercase letters, numbers and single hyphens only — no spaces, no leading or trailing hyphen.';
 
+/**
+ * Whatever was typed or pasted into a +91 phone field → at most 10 local digits. "+91 98765 43210",
+ * "919876543210" and "09876543210" all become "9876543210"; plain typing past 10 digits is ignored.
+ */
+export const phone10 = (v: string) => {
+  const d = v.replace(/\D/g, '');
+  // Strip a prefix only when the length says it is one, so an 11th digit typed after "91…" is just dropped.
+  if (d.length === 14 && d.startsWith('0091')) return d.slice(4);
+  if (d.length === 12 && d.startsWith('91')) return d.slice(2);
+  if (d.length === 11 && d.startsWith('0')) return d.slice(1);
+  return d.slice(0, 10);
+};
+
 export const phoneError = (v: string) =>
   blank(v) || PHONE10_RE.test(v.replace(/^\+91/, '').replace(/\s/g, '')) ? undefined : 'Enter a 10-digit Indian mobile number.';
 

@@ -17,6 +17,11 @@ export {
 } from 'lucide-react';
 export {
   BrowserRouter,
+  // Data router: needed for useBlocker (unsaved-changes guard on back/forward).
+  createBrowserRouter,
+  createRoutesFromElements,
+  RouterProvider,
+  useBlocker,
   Link,
   NavLink,
   Navigate,
@@ -31,7 +36,7 @@ export {
 export { Badge } from './components/Badge/index';
 export { Tabs } from './components/Tabs/index';
 export type { TabItem, TabsProps } from './components/Tabs/index';
-export { apiClient, ApiError, errorMessage } from './api/client';
+export { apiClient, ApiError, errorMessage, fetchOrOffline, NETWORK_ERROR_MESSAGE } from './api/client';
 export type { BadgeProps, BadgeTone } from './components/Badge/index';
 export { Button } from './components/Button/index';
 export type { ButtonProps, ButtonSize, ButtonVariant } from './components/Button/index';
@@ -112,10 +117,12 @@ export type { PriceBreakdown, PriceList, Offer, OfferInput, OfferTarget, OfferTa
 export { inventoryApi } from './api/inventory';
 export type { Warehouse, WarehouseInput, StockAvailability, StockStatus, StockSummary, StockSettings, WarehouseStock, AdjustReason, LedgerEntry } from './api/inventory';
 export { cartApi } from './api/cart';
-export type { Cart, CartLine, CartStatus, CartSummary, CartView } from './api/cart';
+export type { Cart, CartLine, CartStatus, CartSummary, CartView, DeliveryQuote } from './api/cart';
 export { searchApi } from './api/search';
 export type { SearchHit, FacetCount, SearchResult } from './api/search';
 export { notificationApi, NOTIFY_EVENTS, NOTIFY_PLACEHOLDERS } from './api/notification';
+export { analyticsApi } from './api/analytics';
+export type { Grain, ReportRange, SalesBucket, SalesTotals, SalesReport, ProductSales, CustomerSales, CustomersReport } from './api/analytics';
 export type { NotifyTemplate, NotifyDelivery, NotifyChannel, NotifyEvent, DeliveryStatus, Campaign, CampaignStatus } from './api/notification';
 export { mediaApi, mediaSrcSet, mainImage } from './api/media';
 export type { MediaAsset, MediaOwnerType, MediaSize } from './api/media';
@@ -161,6 +168,7 @@ export {
   LoginDetailsPanel,
   SessionsList,
   MIN_PASSWORD_LENGTH,
+  errorText as authErrorText,
 } from './components/PasswordAuth/index';
 export type {
   PasswordLoginFormProps,
@@ -200,6 +208,8 @@ export { Timeline } from './components/Timeline/index';
 export type { TimelineProps, TimelineEntry } from './components/Timeline/index';
 export { DescriptionList } from './components/DescriptionList/index';
 export { Accordion } from './components/Accordion/index';
+export { TrendChart } from './components/TrendChart/index';
+export type { TrendChartProps, TrendPoint } from './components/TrendChart/index';
 export type { AccordionProps } from './components/Accordion/index';
 export { ContactForm, DEFAULT_CONTACT_FIELDS, FORM_FIELD_TYPES, isChoiceField, isTextField, textCap } from './components/ContactForm/index';
 export type { ContactFormProps, ContactAnswers } from './components/ContactForm/index';

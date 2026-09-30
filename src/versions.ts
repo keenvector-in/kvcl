@@ -21,6 +21,7 @@ import { version as PriceTag } from './components/PriceTag/version';
 import { version as DescriptionList } from './components/DescriptionList/version';
 import { version as ContactForm } from './components/ContactForm/version';
 import { version as Accordion } from './components/Accordion/version';
+import { version as TrendChart } from './components/TrendChart/version';
 import { version as Timeline } from './components/Timeline/version';
 import { version as Chip } from './components/Chip/version';
 import { version as QuantityStepper } from './components/QuantityStepper/version';
@@ -81,6 +82,7 @@ export const componentVersions = {
   DescriptionList,
   ContactForm,
   Accordion,
+  TrendChart,
   Timeline,
   QuantityStepper,
   ScrollRail,

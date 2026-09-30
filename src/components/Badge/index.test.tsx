@@ -33,4 +33,15 @@ describe('Badge', () => {
     );
     expect(screen.getByText('Live').querySelector('span')).not.toBeNull();
   });
+
+  it('keeps a multi-word status on one line', () => {
+    render(<Badge>not connected</Badge>);
+    expect(screen.getByText('not connected')).toHaveClass('whitespace-nowrap');
+  });
+
+  it.each(['brand', 'accent', 'success', 'warning', 'info'] as const)('%s text uses the readable -fg token', (tone) => {
+    render(<Badge tone={tone}>{tone}</Badge>);
+    expect(screen.getByText(tone)).toHaveClass(`text-${tone === 'brand' ? 'brand' : tone}-fg`);
+  });
 });
+

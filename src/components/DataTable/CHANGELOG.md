@@ -1,5 +1,14 @@
 # DataTable changelog
 
+## 1.6.0 — 2026-09-30
+
+- Expandable rows get a real "Show details" button (`aria-expanded` on the button, not on the `<tr>`), so a row is no longer a focusable pseudo-button holding other controls (axe `aria-allowed-attr`, `nested-interactive`). Mouse clicks on the row still expand it.
+- Below `sm` each row stacks as a card of label: value pairs (labels from `header`/`label`), so no column hides off-screen in a sideways scroller on a phone.
+
+## 1.5.0 — 2026-09-30
+
+- A column whose `header`/`label` is empty gets a visually hidden heading (default `Actions`, or the new `srHeader`), so the table never has an empty header cell (axe `empty-table-header`).
+
 ## 1.4.1 — 2026-09-22
 
 - Fix: the scroll wrapper is `relative`, so the header's `sr-only` labels stay inside it. Before,

@@ -40,6 +40,7 @@ export interface WorkflowBuilderProps {
 const nodeTypes = { wf: CanvasNode };
 const DRAG_MIME = 'application/kv-workflow-node';
 const HISTORY_LIMIT = 50;
+const NODE_GAP = 120; // vertical spacing between chained steps, in flow units
 
 type Snapshot = { nodes: CanvasNodeType[]; edges: Edge[] };
 
@@ -80,11 +81,19 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
   }, [revision]);
   const edited = useCallback(() => setRevision((r) => r + 1), []);
 
+  // Read through a ref so callbacks memoised elsewhere (the node toolbar, xyflow handlers) never
+  // checkpoint a stale graph.
+  const latest = useRef<Snapshot>({ nodes, edges });
+  latest.current = { nodes, edges };
   const checkpoint = useCallback(() => {
-    history.current.push({ nodes, edges });
+    const snap = latest.current;
+    // Deleting a node removes its edges in a second change batch from the same render — one undo step.
+    const last = history.current.at(-1);
+    if (last && last.nodes === snap.nodes && last.edges === snap.edges) return;
+    history.current.push(snap);
     if (history.current.length > HISTORY_LIMIT) history.current.shift();
     future.current = [];
-  }, [nodes, edges]);
+  }, []);
 
   const restore = (from: Snapshot[], to: Snapshot[]) => {
     const snap = from.pop();
@@ -108,10 +117,11 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
 
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => {
+      if (changes.some((c) => c.type === 'remove')) checkpoint();
       setEdges((eds) => applyEdgeChanges(changes, eds));
       if (changes.some((c) => c.type !== 'select')) edited();
     },
-    [edited],
+    [checkpoint, edited],
   );
 
   const onConnect = useCallback(
@@ -133,12 +143,29 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
     setNodes((nds) => [...nds, toCanvasNode(node)]);
     setSelectedId(node.id);
     edited();
+    return node.id;
   };
 
+  // "+" chains below the selected step (and wires it when that step has a single output);
+  // otherwise it drops at the viewport centre, stepping down past any step already there.
   const addAtCenter = (spec: WorkflowNodeSpec) => {
-    const rect = wrapperRef.current?.getBoundingClientRect();
-    const center = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: 0, y: 0 };
-    addNode(spec, screenToFlowPosition(center));
+    const parent = nodes.find((n) => n.id === selectedId);
+    let position: { x: number; y: number };
+    if (parent) {
+      position = { x: parent.position.x, y: parent.position.y + NODE_GAP };
+    } else {
+      const rect = wrapperRef.current?.getBoundingClientRect();
+      const center = rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : { x: 0, y: 0 };
+      position = screenToFlowPosition(center);
+    }
+    while (nodes.some((n) => Math.abs(n.position.x - position.x) < NODE_GAP && Math.abs(n.position.y - position.y) < NODE_GAP / 2)) {
+      position = { ...position, y: position.y + NODE_GAP };
+    }
+    const newId = addNode(spec, position);
+    const parentSpec = parent && workflowNodeCatalog[parent.data.node.type];
+    if (parent && spec.kind !== 'trigger' && parentSpec && !parentSpec.branching && parentSpec.kind !== 'end') {
+      setEdges((eds) => addEdge({ source: parent.id, target: newId, sourceHandle: null, targetHandle: null, id: crypto.randomUUID() }, eds));
+    }
   };
 
   const onDrop = (e: DragEvent) => {
@@ -240,6 +267,7 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
             nodeTypes={nodeTypes}
             onNodesChange={readOnly ? undefined : onNodesChange}
             onEdgesChange={readOnly ? undefined : onEdgesChange}
+            onNodeDragStart={readOnly ? undefined : checkpoint}
             onConnect={readOnly ? undefined : onConnect}
             onNodeClick={(_, node) => setSelectedId(node.id)}
             onPaneClick={() => setSelectedId(null)}

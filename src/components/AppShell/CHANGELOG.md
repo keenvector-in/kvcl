@@ -1,5 +1,9 @@
 # AppShell changelog
 
+## 1.3.0 — 2026-09-28
+
+- The small-screen sidebar drawer keeps Tab focus inside it while open (shared `useOverlay` focus trap).
+
 ## 1.2.0 — 2026-09-20
 
 - Merged with KeenPlaza's layout shell. Two call shapes:

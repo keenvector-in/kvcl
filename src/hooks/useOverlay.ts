@@ -11,7 +11,8 @@ const stack: symbol[] = [];
  * Shared behaviour for modal-like surfaces (Modal, Drawer, AppShell's small-screen sidebar):
  * Escape calls `onClose` (topmost overlay only), page scroll is locked, focus moves into the surface
  * when it opens (the `[autofocus]` element, else the first focusable that isn't marked
- * `data-overlay-close`) and returns to whatever had focus before when it closes.
+ * `data-overlay-close`), Tab and Shift+Tab stay inside it, and focus returns to whatever had focus
+ * before when it closes.
  *
  * Attach the returned ref to the surface element; give that element `tabIndex={-1}` so it can
  * take focus when it has nothing focusable inside.
@@ -40,7 +41,31 @@ export function useOverlay<T extends HTMLElement>(open: boolean, onClose: () => 
     }
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && stack[stack.length - 1] === id) close.current();
+      if (stack[stack.length - 1] !== id) return;
+      if (e.key === 'Escape') close.current();
+      // Keep Tab inside the surface: wrap from the last focusable to the first and back.
+      if (e.key === 'Tab' && ref.current) {
+        const surface = ref.current;
+        const items = Array.from(surface.querySelectorAll<HTMLElement>(FOCUSABLE));
+        if (items.length === 0) {
+          e.preventDefault();
+          surface.focus();
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        const active = document.activeElement;
+        if (!surface.contains(active)) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && (active === first || active === surface)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && active === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => {

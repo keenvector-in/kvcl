@@ -20,15 +20,16 @@ export interface ChipProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>,
  */
 export function Chip({ children, selected = false, icon, count, onRemove, removeLabel, className = '', ...rest }: ChipProps) {
   const base =
-    'inline-flex shrink-0 items-center gap-1.5 rounded-full border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:pointer-events-none disabled:opacity-50';
+    'inline-flex max-w-full shrink-0 items-center gap-1.5 rounded-full border text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400 disabled:pointer-events-none disabled:opacity-50';
   const tone = selected
     ? 'border-brand-500 bg-brand-500 text-on-brand'
     : 'border-line bg-surface text-fg-muted hover:border-brand-400 hover:text-fg';
   const body = (
     <>
       {icon ? <span aria-hidden="true" className="flex-none [&>svg]:h-4 [&>svg]:w-4">{icon}</span> : null}
-      {children}
-      {count !== undefined ? <span className="tabular-nums opacity-70">{count}</span> : null}
+      {/* a long label truncates inside the chip instead of pushing it past a phone screen */}
+      <span className="min-w-0 truncate">{children}</span>
+      {count !== undefined ? <span className="tabular-nums">{count}</span> : null}
     </>
   );
 
@@ -44,12 +45,12 @@ export function Chip({ children, selected = false, icon, count, onRemove, remove
             onClick={onClick}
             disabled={disabled}
             aria-pressed={selected}
-            className="inline-flex items-center gap-1.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
+            className="inline-flex min-w-0 items-center gap-1.5 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-400"
           >
             {body}
           </button>
         ) : (
-          <span className="inline-flex items-center gap-1.5 py-2">{body}</span>
+          <span className="inline-flex min-w-0 items-center gap-1.5 py-2">{body}</span>
         )}
         <button
           type="button"
