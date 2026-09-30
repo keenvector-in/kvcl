@@ -18,7 +18,7 @@ import { Plus, Redo2, Undo2 } from 'lucide-react';
 import { workflowNodeCatalog, workflowNodeGroups, type WorkflowNodeSpec } from './catalog';
 import { CanvasNode, NodeActionsContext, type CanvasNodeType } from './CanvasNode';
 import { NodeConfigPanel } from './NodeConfigPanel';
-import { kindStyles } from './styles';
+import { kindStyles, typeIcons } from './styles';
 import type { WorkflowEdge, WorkflowGraph, WorkflowNode } from './types';
 
 export interface WorkflowBuilderProps {
@@ -40,7 +40,8 @@ export interface WorkflowBuilderProps {
 const nodeTypes = { wf: CanvasNode };
 const DRAG_MIME = 'application/kv-workflow-node';
 const HISTORY_LIMIT = 50;
-const NODE_GAP = 120; // vertical spacing between chained steps, in flow units
+const NODE_GAP = 190; // vertical spacing between chained steps, in flow units (nodes now show a summary)
+const MINIMAP_MIN_NODES = 8;
 
 type Snapshot = { nodes: CanvasNodeType[]; edges: Edge[] };
 
@@ -191,15 +192,43 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
   const deleteSelected = () => selectedId && removeNode(selectedId);
   const nodeActions = useMemo(() => (readOnly ? null : { edit: setSelectedId, remove: removeNode }), [readOnly]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const iconButton = 'rounded-md p-1.5 text-ink-500 hover:bg-ink-100 hover:text-ink-900';
+  const iconButton = 'rounded-md p-1.5 text-fg-muted hover:bg-sunken hover:text-fg';
+
+  const paletteItem = (spec: WorkflowNodeSpec) => {
+    const Icon = typeIcons[spec.type] ?? kindStyles[spec.kind].icon;
+    return (
+      <button
+        key={spec.type}
+        type="button"
+        draggable
+        onDragStart={(e) => {
+          e.dataTransfer.setData(DRAG_MIME, spec.type);
+          e.dataTransfer.effectAllowed = 'move';
+        }}
+        onClick={() => addAtCenter(spec)}
+        title={spec.preview ? `${spec.label} — preview, can't be published yet` : `Add ${spec.label}`}
+        className="flex cursor-grab items-center gap-2.5 rounded-lg border border-line bg-surface px-2.5 py-2 text-left text-sm font-medium text-fg shadow-sm hover:border-brand-300 hover:bg-brand-500/10 active:cursor-grabbing"
+      >
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${kindStyles[spec.kind].bg} ${kindStyles[spec.kind].text}`}>
+          <Icon className="h-4 w-4" aria-hidden />
+        </span>
+        <span className="flex-1 truncate">{spec.label}</span>
+        {spec.preview ? (
+          <span className="text-[10px] font-semibold uppercase text-fg-subtle">Soon</span>
+        ) : (
+          <Plus className="h-4 w-4 text-fg-subtle" aria-hidden />
+        )}
+      </button>
+    );
+  };
 
   return (
-    <div className={`flex h-full min-h-[480px] flex-col overflow-hidden rounded-xl border border-ink-200/60 bg-white ${className}`}>
-      <div className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-ink-200 px-4 py-2">
+    <div className={`flex h-full min-h-[480px] flex-col overflow-hidden rounded-xl border border-line bg-surface ${className}`}>
+      <div className="flex min-h-14 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2">
         <div className="flex min-w-0 items-center gap-3">
           {title}
           {!readOnly && (
-            <div className="flex items-center gap-1 border-l border-ink-200 pl-3">
+            <div className="flex items-center gap-1 border-l border-line pl-3">
               <button type="button" className={iconButton} onClick={() => restore(history.current, future.current)} aria-label="Undo">
                 <Undo2 className="h-4 w-4" aria-hidden />
               </button>
@@ -214,36 +243,27 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
 
       <div className="flex flex-1 overflow-hidden">
         {!readOnly && (
-          <aside aria-label="Steps" className="w-56 shrink-0 overflow-y-auto border-r border-ink-200 bg-ink-50 p-3">
-            {workflowNodeGroups.map((group) => (
-              <div key={group.title} className="mb-4">
-                <p className="mb-1.5 px-1 text-[10px] font-semibold uppercase tracking-wide text-ink-400">{group.title}</p>
-                <div className="flex flex-col gap-1">
-                  {group.specs.map((spec) => (
-                    <button
-                      key={spec.type}
-                      type="button"
-                      draggable
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData(DRAG_MIME, spec.type);
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      onClick={() => addAtCenter(spec)}
-                      title={spec.preview ? `${spec.label} — preview, can't be published yet` : `Add ${spec.label}`}
-                      className="flex cursor-grab items-center gap-2 rounded-md border border-ink-200 bg-white px-2.5 py-1.5 text-left text-xs font-medium text-ink-700 shadow-sm hover:border-brand-300 hover:bg-brand-50/40 active:cursor-grabbing"
-                    >
-                      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${kindStyles[spec.kind].dot}`} />
-                      <span className="flex-1 truncate">{spec.label}</span>
-                      {spec.preview ? (
-                        <span className="text-[9px] font-semibold uppercase text-ink-400">Soon</span>
-                      ) : (
-                        <Plus className="h-3.5 w-3.5 text-ink-400" aria-hidden />
-                      )}
-                    </button>
-                  ))}
+          <aside aria-label="Steps" className="w-64 shrink-0 overflow-y-auto border-r border-line bg-sunken p-3">
+            {workflowNodeGroups.map((group) => {
+              const ready = group.specs.filter((s) => !s.preview);
+              const soon = group.specs.filter((s) => s.preview);
+              return (
+                <div key={group.title} className="mb-4">
+                  <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">{group.title}</p>
+                  <div className="flex flex-col gap-1.5">{ready.map(paletteItem)}</div>
+                  {soon.length > 0 && (
+                    // Preview steps can be designed and tested but not published — out of the way until asked for.
+                    <details className="mt-1 group/soon">
+                      <summary className="cursor-pointer list-none px-1 py-1 text-xs text-fg-subtle hover:text-fg">
+                        <span className="group-open/soon:hidden">+ {soon.length} coming soon</span>
+                        <span className="hidden group-open/soon:inline">− Coming soon</span>
+                      </summary>
+                      <div className="flex flex-col gap-1.5 opacity-80">{soon.map(paletteItem)}</div>
+                    </details>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </aside>
         )}
 
@@ -276,19 +296,34 @@ function Builder({ defaultValue, onChange, readOnly = false, title, actions, cla
             nodesConnectable={!readOnly}
             minZoom={0.4}
             fitView
+            fitViewOptions={{ padding: 0.2 }}
           >
             <Background gap={16} />
             <Controls showInteractive={!readOnly} />
-            <MiniMap pannable zoomable />
+            {/* A handful of steps all fit on screen; below that the minimap only covers them. */}
+            {nodes.length > MINIMAP_MIN_NODES && <MiniMap pannable zoomable style={{ width: 140, height: 90 }} />}
           </ReactFlow>
+          {nodes.length === 0 && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
+              <div className="max-w-xs rounded-xl border border-dashed border-line-strong bg-surface/90 p-5 text-center shadow-sm">
+                <p className="text-sm font-semibold text-fg">{readOnly ? 'This workflow has no steps.' : 'Start with a trigger'}</p>
+                {!readOnly && (
+                  <p className="mt-1 text-xs text-fg-muted">
+                    Click <span className="font-medium text-fg">+</span> next to <span className="font-medium text-fg">Incoming Message</span>, then
+                    select it and add the next step — new steps connect below the selected one.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
           </NodeActionsContext.Provider>
         </div>
 
-        <aside aria-label="Step settings" className="w-72 shrink-0 overflow-y-auto border-l border-ink-200 bg-white max-md:hidden">
+        <aside aria-label="Step settings" className="w-80 shrink-0 overflow-y-auto border-l border-line bg-surface max-md:hidden">
           {selected ? (
             <NodeConfigPanel node={selected} onChange={patchSelected} onDelete={deleteSelected} readOnly={readOnly} />
           ) : (
-            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-ink-400">
+            <div className="flex h-full items-center justify-center p-6 text-center text-sm text-fg-subtle">
               {readOnly ? 'Click a step to view its settings.' : 'Click a step to edit it. Use + in the left list to add one.'}
             </div>
           )}

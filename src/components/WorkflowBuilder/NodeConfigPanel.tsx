@@ -10,14 +10,16 @@ export interface NodeConfigPanelProps {
   readOnly?: boolean;
 }
 
-const controlClass =
-  'h-9 w-full rounded-md border border-ink-200 bg-white px-3 text-sm text-ink-900 shadow-sm placeholder:text-ink-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:bg-ink-50 disabled:text-ink-500';
+// No height here: a textarea sets its own. `h-9 h-auto` together let h-9 win and squashed it to one line.
+const baseControl =
+  'w-full rounded-md border border-line bg-surface px-3 text-sm text-fg shadow-sm placeholder:text-fg-subtle focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:bg-sunken disabled:text-fg-muted';
+const controlClass = `h-9 ${baseControl}`;
 
 function Field({ label, children }: { label: string; children: (id: string) => React.ReactNode }) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-xs font-medium text-ink-700">
+      <label htmlFor={id} className="text-xs font-medium text-fg">
         {label}
       </label>
       {children(id)}
@@ -42,7 +44,7 @@ function ConfigControl({ field, value, onChange, autoFocus }: { field: WorkflowF
             id={id}
             rows={4}
             autoFocus={autoFocus}
-            className={`${controlClass} h-auto resize-y py-2`}
+            className={`${baseControl} min-h-28 resize-y py-2 leading-relaxed`}
             value={value}
             placeholder={field.placeholder}
             onChange={(e) => onChange(e.target.value)}
@@ -62,12 +64,12 @@ export function NodeConfigPanel({ node, onChange, onDelete, readOnly = false }: 
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-ink-200 p-4">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-ink-400">{readOnly ? 'Step' : 'Edit step'}</p>
-        <p className="text-sm font-semibold text-ink-900">{spec?.label ?? node.type}</p>
-        {!readOnly && <p className="mt-1 text-xs text-ink-500">Changes apply to the draft as you type. Save draft, then Publish.</p>}
+      <div className="border-b border-line p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-fg-subtle">{readOnly ? 'Step' : 'Edit step'}</p>
+        <p className="text-sm font-semibold text-fg">{spec?.label ?? node.type}</p>
+        {!readOnly && <p className="mt-1 text-xs text-fg-muted">Changes apply to the draft as you type. Save draft, then Publish.</p>}
         {spec?.preview && (
-          <p className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
+          <p className="mt-2 rounded-md bg-warning-soft px-2 py-1.5 text-xs text-warning-fg">
             Preview — you can design and test with this step, but it can't be published yet.
           </p>
         )}
@@ -88,14 +90,14 @@ export function NodeConfigPanel({ node, onChange, onDelete, readOnly = false }: 
         ))}
         {spec?.variables && !readOnly && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-ink-700">Insert a variable</span>
+            <span className="text-xs font-medium text-fg">Insert a variable</span>
             <div className="flex flex-wrap gap-1">
               {spec.variables.names.map((name) => (
                 <button
                   key={name}
                   type="button"
                   onClick={() => onChange({ config: { ...config, [spec.variables!.field]: `${config[spec.variables!.field] ?? ''}{{${name}}}` } })}
-                  className="rounded-full border border-ink-200 bg-ink-50 px-2 py-0.5 font-mono text-[11px] text-ink-700 hover:border-brand-400 hover:text-brand-700"
+                  className="rounded-full border border-line bg-sunken px-2 py-0.5 font-mono text-[11px] text-fg hover:border-brand-400 hover:text-brand-500"
                 >
                   {`{{${name}}}`}
                 </button>
@@ -103,15 +105,15 @@ export function NodeConfigPanel({ node, onChange, onDelete, readOnly = false }: 
             </div>
           </div>
         )}
-        {spec?.help && <p className="text-xs text-ink-500">{spec.help}</p>}
+        {spec?.help && <p className="text-xs text-fg-muted">{spec.help}</p>}
       </fieldset>
 
       {!readOnly && (
-        <div className="border-t border-ink-200 p-4">
+        <div className="border-t border-line p-4">
           <button
             type="button"
             onClick={onDelete}
-            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-ink-200 text-xs font-medium text-red-600 hover:bg-red-50"
+            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-line text-xs font-medium text-danger hover:bg-danger-soft"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden /> Delete step
           </button>

@@ -1,8 +1,8 @@
 import { createContext, useContext } from 'react';
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { AtSign, Bot, Hash, Mail, MessageCircle, MessageSquare, Pencil, Reply, Tag, Trash2, UserCog, Webhook, type LucideIcon } from 'lucide-react';
-import { workflowNodeCatalog } from './catalog';
-import { kindStyles } from './styles';
+import { Pencil, Trash2 } from 'lucide-react';
+import { workflowNodeCatalog, type WorkflowNodeSpec } from './catalog';
+import { kindStyles, typeIcons } from './styles';
 import type { WorkflowNode } from './types';
 
 export type CanvasNodeType = Node<{ node: WorkflowNode }, 'wf'>;
@@ -11,24 +11,22 @@ export type CanvasNodeType = Node<{ node: WorkflowNode }, 'wf'>;
 // (not node data) so nodes stay plain data and the builder owns the behaviour.
 export const NodeActionsContext = createContext<{ edit: (id: string) => void; remove: (id: string) => void } | null>(null);
 
-const typeIcons: Record<string, LucideIcon> = {
-  send_sms: MessageSquare,
-  send_whatsapp: MessageCircle,
-  reply: Reply,
-  send_email: Mail,
-  send_slack: Hash,
-  send_instagram: AtSign,
-  webhook_action: Webhook,
-  update_contact: UserCog,
-  add_tag: Tag,
-  remove_tag: Tag,
-  ask_ai_agent: Bot,
-  ai_intent: Bot,
-  verify_email: Mail,
-  verify_whatsapp_number: MessageCircle,
-};
 
-const handleClass = 'h-2! w-2! border-0!';
+const handleClass = 'h-2.5! w-2.5! border-0!';
+
+/** What the step does, from its own settings in field order — options by their label —
+ * so the canvas reads without opening each step ("Message text · Contains · plaza"). */
+function stepSummary(node: WorkflowNode, spec: WorkflowNodeSpec | undefined): string {
+  if (!spec) return '';
+  const config = node.config ?? {};
+  return spec.fields
+    .map((field) => {
+      const value = config[field.key] ?? '';
+      return field.options ? (field.options.find((o) => o.value === value)?.label ?? value) : value.trim();
+    })
+    .filter(Boolean)
+    .join(' · ');
+}
 
 export function CanvasNode({ data, selected }: NodeProps<CanvasNodeType>) {
   const { node } = data;
@@ -37,11 +35,12 @@ export function CanvasNode({ data, selected }: NodeProps<CanvasNodeType>) {
   const style = kindStyles[kind];
   const Icon = typeIcons[node.type] ?? style.icon;
   const actions = useContext(NodeActionsContext);
-  const toolButton = 'flex h-6 w-6 items-center justify-center rounded-md border border-ink-200 bg-white text-ink-500 shadow-sm hover:text-ink-900';
+  const toolButton = 'flex h-6 w-6 items-center justify-center rounded-md border border-line bg-surface text-fg-muted shadow-sm hover:text-fg';
+  const summary = stepSummary(node, spec);
 
   return (
     <div
-      className={`relative min-w-[180px] rounded-lg border-2 bg-white px-3 py-2.5 shadow-sm ${style.border} ${
+      className={`relative w-72 rounded-xl border-2 bg-surface px-3.5 py-3 shadow-sm ${style.border} ${
         selected ? 'ring-2 ring-brand-500' : ''
       }`}
     >
@@ -50,28 +49,34 @@ export function CanvasNode({ data, selected }: NodeProps<CanvasNodeType>) {
           <button type="button" className={toolButton} title="Edit step" aria-label="Edit step" onClick={() => actions.edit(node.id)}>
             <Pencil className="h-3 w-3" aria-hidden />
           </button>
-          <button type="button" className={`${toolButton} hover:text-red-600`} title="Delete step" aria-label="Delete step" onClick={() => actions.remove(node.id)}>
+          <button type="button" className={`${toolButton} hover:text-danger`} title="Delete step" aria-label="Delete step" onClick={() => actions.remove(node.id)}>
             <Trash2 className="h-3 w-3" aria-hidden />
           </button>
         </div>
       )}
       {kind !== 'trigger' && <Handle type="target" position={Position.Top} className={`${handleClass} bg-ink-400!`} />}
 
-      <div className="flex items-center gap-2">
-        <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${style.bg} ${style.text}`}>
-          <Icon className="h-3.5 w-3.5" aria-hidden />
+      <div className="flex items-center gap-2.5">
+        <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${style.bg} ${style.text}`}>
+          <Icon className="h-4 w-4" aria-hidden />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-ink-900">{node.label}</p>
-          <p className="truncate text-[10px] uppercase tracking-wide text-ink-400">{spec?.label ?? node.type}</p>
+          <p className="truncate text-sm font-semibold text-fg">{node.label}</p>
+          <p className="truncate text-[11px] uppercase tracking-wide text-fg-subtle">{spec?.label ?? node.type}</p>
         </div>
       </div>
+      {summary && (
+        // Clamp an inner span: on the padded box itself the third line shows through the padding.
+        <p title={summary} className="mt-2.5 rounded-md bg-sunken px-2.5 py-1.5 text-xs leading-snug text-fg-muted">
+          <span className="line-clamp-2 break-words">{summary}</span>
+        </p>
+      )}
 
       {spec?.branching ? (
         <>
           <Handle type="source" position={Position.Bottom} id="yes" style={{ left: '30%' }} className={`${handleClass} bg-emerald-500!`} />
           <Handle type="source" position={Position.Bottom} id="no" style={{ left: '70%' }} className={`${handleClass} bg-red-500!`} />
-          <div className="mt-1 flex justify-between px-1 text-[9px] font-medium text-ink-400">
+          <div className="mt-1.5 flex justify-between px-1 text-[10px] font-medium text-fg-subtle">
             <span>YES</span>
             <span>NO</span>
           </div>

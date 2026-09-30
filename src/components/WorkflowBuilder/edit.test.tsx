@@ -61,7 +61,34 @@ describe('WorkflowBuilder add', () => {
     fireEvent.click(screen.getByTitle('Add Reply'));
     const last = onChange.mock.calls.at(-1)?.[0];
     const added = last.nodes.find((n: { id: string }) => n.id !== 't' && n.id !== 'r');
-    expect(added.position).toEqual({ x: 0, y: 320 });
+    expect(added.position).toEqual({ x: 0, y: 390 });
     expect(last.edges.some((e: { source: string; target: string }) => e.source === 'r' && e.target === added.id)).toBe(true);
+  });
+});
+
+describe('WorkflowBuilder canvas readability', () => {
+  it('each step shows what it does without opening it', () => {
+    render(
+      <WorkflowBuilder
+        defaultValue={{
+          nodes: [
+            { id: 'c', type: 'condition', label: 'Mentions KeenPlaza?', position: { x: 0, y: 0 }, config: { field: 'message.body', operator: 'contains', value: 'plaza' } },
+            { id: 's', type: 'send_whatsapp', label: 'Forward', position: { x: 0, y: 200 }, config: { to: '917574031586', message: 'New message' } },
+          ],
+          edges: [],
+        }}
+        onChange={() => {}}
+      />,
+    );
+    expect(screen.getByText('Message text · Contains · plaza')).toBeInTheDocument();
+    expect(screen.getByText('917574031586 · New message')).toBeInTheDocument();
+  });
+
+  it('an empty canvas says where to start, and preview steps sit under "coming soon"', () => {
+    render(<WorkflowBuilder defaultValue={{ nodes: [], edges: [] }} onChange={() => {}} />);
+    expect(screen.getByText('Start with a trigger')).toBeInTheDocument();
+    const soon = screen.getAllByText(/coming soon$/)[0].closest('details')!;
+    expect(soon.open).toBe(false);
+    expect(soon).toHaveTextContent('Webhook');
   });
 });

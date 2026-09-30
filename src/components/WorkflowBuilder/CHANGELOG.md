@@ -1,5 +1,15 @@
 # WorkflowBuilder changelog
 
+## 1.6.0 — 2026-09-30
+
+- Each step on the canvas shows a summary of its settings ("Message text · Contains · plaza", "917574031586 · New message…"), so a workflow reads without opening every step.
+- Preview ("Soon") steps are folded under a "+ N coming soon" toggle in each palette group; ready steps come first.
+- An empty canvas shows where to start. The minimap appears only past 8 steps and is smaller, so it no longer covers steps on small workflows.
+- Multiline fields (Reply, Send WhatsApp message) open at a readable height instead of one squashed line.
+- Colours come from the theme tokens (`bg-surface`, `text-fg`, `border-line`, …), so the builder follows dark mode.
+- Contact Created, Form Submitted and Chatbot Message triggers are runnable (core-engine now starts them) and each explains what it provides.
+- Every step type has its own icon (chat bubble, branch, hourglass, sparkles…) in the palette and on the canvas, from one shared map. Palette items, canvas steps and the settings panel are larger.
+
 ## 1.5.0 — 2026-09-28
 
 - Undo now covers edge deletions and node moves (a checkpoint is taken on edge removal and at drag start).

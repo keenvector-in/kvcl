@@ -86,13 +86,15 @@ const verifyFields: WorkflowField[] = [
   { key: 'check', label: 'Check' },
 ];
 
-const simpleTrigger = (type: string, label: string): WorkflowNodeSpec => ({
+/** A trigger with no settings. Without `help` it is a preview (not runnable yet). */
+const simpleTrigger = (type: string, label: string, help?: string): WorkflowNodeSpec => ({
   type,
   label,
   kind: 'trigger',
-  preview: true,
+  preview: !help,
   fields: [],
   defaults: {},
+  help,
 });
 
 const specs: WorkflowNodeSpec[] = [
@@ -118,11 +120,11 @@ const specs: WorkflowNodeSpec[] = [
     help: 'Starts a run each time a contact messages you.',
   },
   simpleTrigger('webhook_trigger', 'Webhook'),
-  simpleTrigger('contact_created', 'Contact Created'),
+  simpleTrigger('contact_created', 'Contact Created', 'Starts when someone reaches you for the first time on any channel. {{contact.*}} has what they gave; use Send WhatsApp to reach them — there is no message to Reply to.'),
   simpleTrigger('campaign_started', 'Campaign Started'),
   simpleTrigger('payment_received', 'Payment Received'),
-  simpleTrigger('form_submitted', 'Form Submitted'),
-  simpleTrigger('chatbot_message', 'Chatbot Message'),
+  simpleTrigger('form_submitted', 'Form Submitted', 'Starts when a visitor sends your website\'s contact form. {{message.body}} is their message, {{contact.name}}/{{contact.email}}/{{contact.phone}} what they typed; use Send WhatsApp to reach them.'),
+  simpleTrigger('chatbot_message', 'Chatbot Message', 'Starts on every message in your website chat. Reply answers in the chat.'),
 
   {
     type: 'reply',
