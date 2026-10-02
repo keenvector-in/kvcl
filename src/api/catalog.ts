@@ -153,6 +153,9 @@ export function catalogApi(http: HttpClient, opts: { includeUnpublished?: boolea
 
     listProducts: (tenantId: string, limit = 20, offset = 0) =>
       http.request<{ products: Product[] }>(read(`/v1/products?limit=${limit}&offset=${offset}`), { tenantId, auth: all }),
+    /** Up to 100 products by id, in one call — a page of search hits. Order is not the ids' order. */
+    productsByIds: (tenantId: string, ids: string[]) =>
+      http.request<{ products: Product[] }>(read(`/v1/products?limit=100&ids=${ids.join(',')}`), { tenantId, auth: all }),
     getProduct: (tenantId: string, productId: string) =>
       http.request<Product>(read(`/v1/products/${productId}`), { tenantId, auth: all }),
     createProduct: (tenantId: string, title: string, description: string, categoryId?: string, brandId?: string) =>

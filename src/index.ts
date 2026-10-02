@@ -119,7 +119,7 @@ export type { Warehouse, WarehouseInput, StockAvailability, StockStatus, StockSu
 export { cartApi } from './api/cart';
 export type { Cart, CartLine, CartStatus, CartSummary, CartView, DeliveryQuote } from './api/cart';
 export { searchApi } from './api/search';
-export type { SearchHit, FacetCount, SearchResult } from './api/search';
+export type { SearchHit, FacetCount, AttributeFacet, SearchResult, SearchOptions } from './api/search';
 export { notificationApi, NOTIFY_EVENTS, NOTIFY_PLACEHOLDERS, REVIEW_PLACEHOLDERS } from './api/notification';
 export { analyticsApi } from './api/analytics';
 export type { Grain, ReportRange, SalesBucket, SalesTotals, SalesReport, ProductSales, CustomerSales, CustomersReport } from './api/analytics';
