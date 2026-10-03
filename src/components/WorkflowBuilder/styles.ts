@@ -1,5 +1,5 @@
 import {
-  AtSign, BookmarkMinus, BotMessageSquare, BrainCircuit, CalendarClock, CircleCheck, ClipboardList, Clock, CreditCard, Database,
+  AtSign, BookmarkMinus, ChartNoAxesColumn, BotMessageSquare, BrainCircuit, CalendarClock, CircleCheck, ClipboardList, Clock, CreditCard, Database,
   Flag, GitBranch, Globe, Hash, Hourglass, IndianRupee, Mail, MailCheck, Megaphone, MessageCircle, MessageSquare, MessageSquareText,
   Plug, Reply, ScanSearch, Send, ShieldCheck, Sparkles, Split, Tag, UserCog, UserPlus, Webhook, Zap, type LucideIcon,
 } from 'lucide-react';
@@ -31,6 +31,7 @@ export const typeIcons: Record<string, LucideIcon> = {
   send_slack: Hash,
   send_instagram: AtSign,
   ask_ai_agent: Sparkles,
+  campaign_details: ChartNoAxesColumn,
   webhook_action: Webhook,
   update_contact: UserCog,
   add_tag: Tag,

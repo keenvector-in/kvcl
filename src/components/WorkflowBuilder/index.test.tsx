@@ -91,4 +91,20 @@ describe('NodeConfigPanel', () => {
     expect(screen.getByLabelText('Compare with')).toBeDisabled();
     expect(screen.queryByRole('button', { name: /Delete step/ })).not.toBeInTheDocument();
   });
+
+  it('Campaign details asks which campaign, defaulting to the message', () => {
+    const node = { id: 'cd', type: 'campaign_details', label: 'Campaign details', position: { x: 0, y: 0 }, config: workflowNodeCatalog.campaign_details.defaults };
+    render(<NodeConfigPanel node={node} onChange={() => {}} onDelete={() => {}} />);
+    expect(screen.getByLabelText('Campaign to look up')).toHaveAttribute('placeholder', '{{message.body}} — finds the campaign named in the message');
+    expect(workflowNodeCatalog.campaign_details.preview).toBeFalsy();
+    expect(workflowNodeCatalog.campaign_details.help).toContain('{{campaign.summary}}');
+  });
+
+  it('Reply offers the campaign variables a Campaign details step sets', async () => {
+    const onChange = vi.fn();
+    const node = { id: 'r', type: 'reply', label: 'Reply', position: { x: 0, y: 0 }, config: { message: '' } };
+    render(<NodeConfigPanel node={node} onChange={onChange} onDelete={() => {}} />);
+    await userEvent.click(screen.getByRole('button', { name: '{{campaign.summary}}' }));
+    expect(onChange).toHaveBeenCalledWith({ config: { message: '{{campaign.summary}}' } });
+  });
 });

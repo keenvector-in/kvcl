@@ -62,7 +62,13 @@ const conditionFields: WorkflowField[] = [
   { key: 'value', label: 'Compare with', placeholder: 'YES' },
 ];
 
-const messageVariables = { field: 'message', names: ['contact.name', 'contact.email', 'contact.phone', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address'] };
+/** Set by a Campaign details step earlier in the workflow. */
+const campaignVariableNames = ['campaign.summary', 'campaign.name', 'campaign.status', 'campaign.total', 'campaign.sent', 'campaign.failed', 'campaign.waiting', 'campaign.started'];
+
+const messageVariables = {
+  field: 'message',
+  names: ['contact.name', 'contact.email', 'contact.phone', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address', ...campaignVariableNames],
+};
 
 const textMessageFields: WorkflowField[] = [
   { key: 'to', label: 'Send to', placeholder: '{{message.from}}' },
@@ -149,6 +155,7 @@ const specs: WorkflowNodeSpec[] = [
     label: 'Reply',
     kind: 'action',
     fields: [{ key: 'message', label: 'What reply do you want to send?', placeholder: 'Hi {{message.from}}, thanks for reaching out', multiline: true }],
+    variables: messageVariables,
     defaults: { message: '' },
     help: 'Answers on the same channel the message came in on — WhatsApp, Instagram, SMS… whichever the workflow is linked to.',
   },
@@ -200,6 +207,14 @@ const specs: WorkflowNodeSpec[] = [
     ],
     defaults: { instructions: '' },
     help: 'The AI assistant answers with your knowledge and persona (Settings → AI assistant) and replies on the channel the customer used. If it can\'t answer it sends your handoff message.',
+  },
+  {
+    type: 'campaign_details',
+    label: 'Campaign details',
+    kind: 'action',
+    fields: [{ key: 'campaign', label: 'Campaign to look up', placeholder: '{{message.body}} — finds the campaign named in the message' }],
+    defaults: { campaign: '' },
+    help: 'Finds your campaign named in the message (or the text above) and gives later steps {{campaign.summary}} — a ready-to-send status line — plus {{campaign.name}}, {{campaign.status}}, {{campaign.total}}, {{campaign.sent}}, {{campaign.failed}}, {{campaign.waiting}} and {{campaign.started}}. Add a Reply with {{campaign.summary}} to answer "how is the Diwali sale going?". If no campaign matches, the summary lists your recent ones.',
   },
   { type: 'webhook_action', label: 'Webhook', kind: 'action', preview: true, fields: httpFields, defaults: { url: '', method: 'POST' } },
   {

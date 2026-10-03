@@ -1,5 +1,10 @@
 # WorkflowBuilder changelog
 
+## 1.8.0 — 2026-10-04
+
+- New action **Campaign details**: finds the campaign named in the message (or in "Campaign to look up") and gives later steps `{{campaign.summary}}`, `{{campaign.name}}`, `{{campaign.status}}`, `{{campaign.total}}`, `{{campaign.sent}}`, `{{campaign.failed}}`, `{{campaign.waiting}}` and `{{campaign.started}}`.
+- Reply, Send WhatsApp and Send Slack offer the `{{campaign.*}}` variables as insert chips; Reply now offers the message/contact variables too.
+
 ## 1.7.1 — 2026-10-04
 
 - Send Slack is no longer a "Soon" preview step — core-engine runs it — and its message offers the same {{variables}} as Send WhatsApp.
