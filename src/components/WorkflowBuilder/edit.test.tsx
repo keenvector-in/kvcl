@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { WorkflowBuilder } from './index';
+import { workflowNodeCatalog } from './catalog';
 
 const graph = {
   nodes: [
@@ -120,5 +121,14 @@ describe('WorkflowBuilder Slack trigger fields', () => {
     const cfg = onChange.mock.calls.at(-1)?.[0].nodes[0].config;
     expect(cfg.slack_listen).toBe('both');
     expect(cfg.slack_channel).toBe('#sales');
+  });
+});
+
+describe('WorkflowBuilder Slack catalog', () => {
+  it('Send Slack is runnable and Incoming Message mentions Slack teammates', () => {
+    expect(workflowNodeCatalog.send_slack.preview).toBeFalsy();
+    expect(workflowNodeCatalog.incoming_message.help).toBe(
+      'Starts a run each time someone messages you — a customer on WhatsApp, Instagram or chat, or a teammate on Slack.',
+    );
   });
 });

@@ -1,5 +1,10 @@
 # WorkflowBuilder changelog
 
+## 1.7.1 — 2026-10-04
+
+- Send Slack is no longer a "Soon" preview step — core-engine runs it — and its message offers the same {{variables}} as Send WhatsApp.
+- Incoming Message help says who it starts on: "a customer on WhatsApp, Instagram or chat, or a teammate on Slack."
+
 ## 1.7.0 — 2026-10-04
 
 - Incoming Message shows Slack settings when the channel is Slack: "Listen to" (@mentions and DMs, every message, both) and "Slack channel". Fields can now declare `showWhen` to appear only for a given value of another field.
