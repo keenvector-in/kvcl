@@ -13,6 +13,8 @@ export interface WorkflowField {
   multiline?: boolean;
   /** Renders a select instead of a text input. */
   options?: WorkflowFieldOption[];
+  /** Shown only while the node's config[key] equals `equals`. */
+  showWhen?: { key: string; equals: string };
 }
 
 export interface WorkflowNodeSpec {
@@ -114,6 +116,22 @@ const specs: WorkflowNodeSpec[] = [
           { value: 'instagram', label: 'Instagram' },
           { value: 'slack', label: 'Slack' },
         ],
+      },
+      {
+        key: 'slack_listen',
+        label: 'Listen to',
+        showWhen: { key: 'channel', equals: 'slack' },
+        options: [
+          { value: 'mentions', label: '@mentions and DMs' },
+          { value: 'messages', label: 'Every message' },
+          { value: 'both', label: 'Both' },
+        ],
+      },
+      {
+        key: 'slack_channel',
+        label: 'Slack channel',
+        placeholder: '#support-intake (empty = any channel the bot is in)',
+        showWhen: { key: 'channel', equals: 'slack' },
       },
     ],
     defaults: {},

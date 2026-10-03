@@ -1,5 +1,9 @@
 # WorkflowBuilder changelog
 
+## 1.7.0 — 2026-10-04
+
+- Incoming Message shows Slack settings when the channel is Slack: "Listen to" (@mentions and DMs, every message, both) and "Slack channel". Fields can now declare `showWhen` to appear only for a given value of another field.
+
 ## 1.6.0 — 2026-09-30
 
 - Each step on the canvas shows a summary of its settings ("Message text · Contains · plaza", "917574031586 · New message…"), so a workflow reads without opening every step.

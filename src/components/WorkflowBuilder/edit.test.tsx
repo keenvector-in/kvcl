@@ -92,3 +92,33 @@ describe('WorkflowBuilder canvas readability', () => {
     expect(soon).toHaveTextContent('Webhook');
   });
 });
+
+describe('WorkflowBuilder Slack trigger fields', () => {
+  const slackGraph = (channel: string) => ({
+    nodes: [{ id: 't', type: 'incoming_message', label: 'Trigger', position: { x: 0, y: 0 }, config: { channel } }],
+    edges: [],
+  });
+
+  it('shows Slack fields only when channel is slack', async () => {
+    const { unmount } = render(<WorkflowBuilder defaultValue={slackGraph('whatsapp')} />);
+    fireEvent.click(screen.getByText('Trigger'));
+    await screen.findByLabelText('Channel');
+    expect(screen.queryByLabelText('Listen to')).toBeNull();
+    unmount();
+    render(<WorkflowBuilder defaultValue={slackGraph('slack')} />);
+    fireEvent.click(screen.getByText('Trigger'));
+    expect(await screen.findByLabelText('Listen to')).toBeInTheDocument();
+    expect(screen.getByLabelText('Slack channel')).toBeInTheDocument();
+  });
+
+  it('writes slack_listen and slack_channel to node config', async () => {
+    const onChange = vi.fn();
+    render(<WorkflowBuilder defaultValue={slackGraph('slack')} onChange={onChange} />);
+    fireEvent.click(screen.getByText('Trigger'));
+    await userEvent.selectOptions(await screen.findByLabelText('Listen to'), 'both');
+    await userEvent.type(screen.getByLabelText('Slack channel'), '#sales');
+    const cfg = onChange.mock.calls.at(-1)?.[0].nodes[0].config;
+    expect(cfg.slack_listen).toBe('both');
+    expect(cfg.slack_channel).toBe('#sales');
+  });
+});

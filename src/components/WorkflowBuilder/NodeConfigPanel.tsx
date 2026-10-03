@@ -79,7 +79,7 @@ export function NodeConfigPanel({ node, onChange, onDelete, readOnly = false }: 
         <Field label="Label">
           {(id) => <input id={id} className={controlClass} value={node.label} onChange={(e) => onChange({ label: e.target.value })} />}
         </Field>
-        {spec?.fields.map((field, i) => (
+        {spec?.fields.filter((f) => !f.showWhen || (config[f.showWhen.key] ?? '') === f.showWhen.equals).map((field, i) => (
           <ConfigControl
             key={`${node.id}-${field.key}`}
             autoFocus={i === 0 && !readOnly}
