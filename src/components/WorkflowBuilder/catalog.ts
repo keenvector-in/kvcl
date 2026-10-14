@@ -47,6 +47,11 @@ const conditionFields: WorkflowField[] = [
       { value: 'contact.name', label: 'Contact name' },
       { value: 'contact.email', label: 'Contact email' },
       { value: 'contact.phone', label: 'Contact phone' },
+      { value: 'order.status', label: 'Order status (KeenPlaza)' },
+      { value: 'order.previous_status', label: 'Previous order status' },
+      { value: 'order.event', label: 'Order event' },
+      { value: 'order.courier', label: 'Courier' },
+      { value: 'order.payment_method', label: 'Payment method' },
     ],
   },
   {
@@ -65,9 +70,12 @@ const conditionFields: WorkflowField[] = [
 /** Set by a Campaign details step earlier in the workflow. */
 const campaignVariableNames = ['campaign.summary', 'campaign.name', 'campaign.status', 'campaign.total', 'campaign.sent', 'campaign.failed', 'campaign.waiting', 'campaign.started'];
 
+/** Set by a Webhook trigger from KeenPlaza: the order whose status changed. */
+const orderVariableNames = ['order.number', 'order.status_label', 'order.status', 'order.previous_status', 'order.total', 'order.payment_method', 'order.courier', 'order.awb', 'order.store'];
+
 const messageVariables = {
   field: 'message',
-  names: ['contact.name', 'contact.email', 'contact.phone', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address', ...campaignVariableNames],
+  names: ['contact.name', 'contact.email', 'contact.phone', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address', ...campaignVariableNames, ...orderVariableNames],
 };
 
 const textMessageFields: WorkflowField[] = [
@@ -143,7 +151,25 @@ const specs: WorkflowNodeSpec[] = [
     defaults: {},
     help: 'Starts a run each time someone messages you — a customer on WhatsApp, Instagram or chat, or a teammate on Slack.',
   },
-  simpleTrigger('webhook_trigger', 'Webhook'),
+  {
+    type: 'webhook_trigger',
+    label: 'Webhook',
+    kind: 'trigger',
+    fields: [
+      { key: 'source', label: 'From', options: [{ value: 'keenplaza', label: 'KeenPlaza store' }] },
+      {
+        key: 'event',
+        label: 'Event',
+        options: [
+          { value: '', label: 'Any order event' },
+          { value: 'order.confirmed', label: 'Order confirmed' },
+          { value: 'order.status_changed', label: 'Order status changed' },
+        ],
+      },
+    ],
+    defaults: { source: 'keenplaza', event: '' },
+    help: 'Starts when your linked KeenPlaza store sends an order event. {{order.number}}, {{order.status_label}}, {{order.courier}}, {{order.awb}} describe the order; {{contact.name}}/{{contact.phone}} are the shopper. Use Send WhatsApp to reach them.',
+  },
   simpleTrigger('contact_created', 'Contact Created', 'Starts when someone reaches you for the first time on any channel. {{contact.*}} has what they gave; use Send WhatsApp to reach them — there is no message to Reply to.'),
   simpleTrigger('campaign_started', 'Campaign Started'),
   simpleTrigger('payment_received', 'Payment Received'),

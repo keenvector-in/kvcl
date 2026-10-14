@@ -92,6 +92,14 @@ describe('NodeConfigPanel', () => {
     expect(screen.queryByRole('button', { name: /Delete step/ })).not.toBeInTheDocument();
   });
 
+  it('Webhook trigger is runnable and picks the KeenPlaza order event', () => {
+    const node = { id: 'wh', type: 'webhook_trigger', label: 'Webhook', position: { x: 0, y: 0 }, config: workflowNodeCatalog.webhook_trigger.defaults };
+    render(<NodeConfigPanel node={node} onChange={() => {}} onDelete={() => {}} />);
+    expect(screen.getByLabelText('Event')).toBeInTheDocument();
+    expect(workflowNodeCatalog.webhook_trigger.preview).toBeFalsy();
+    expect(workflowNodeCatalog.send_whatsapp.variables?.names).toContain('order.awb');
+  });
+
   it('Campaign details asks which campaign, defaulting to the message', () => {
     const node = { id: 'cd', type: 'campaign_details', label: 'Campaign details', position: { x: 0, y: 0 }, config: workflowNodeCatalog.campaign_details.defaults };
     render(<NodeConfigPanel node={node} onChange={() => {}} onDelete={() => {}} />);

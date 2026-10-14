@@ -90,7 +90,7 @@ describe('WorkflowBuilder canvas readability', () => {
     expect(screen.getByText('Start with a trigger')).toBeInTheDocument();
     const soon = screen.getAllByText(/coming soon$/)[0].closest('details')!;
     expect(soon.open).toBe(false);
-    expect(soon).toHaveTextContent('Webhook');
+    expect(soon).toHaveTextContent('Payment Received');
   });
 });
 

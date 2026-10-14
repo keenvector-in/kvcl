@@ -1,5 +1,10 @@
 # WorkflowBuilder changelog
 
+## 1.9.0 — 2026-10-10
+
+- **Webhook** trigger is runnable: it starts on a linked KeenPlaza store's order events, with settings *From* (KeenPlaza store) and *Event* (any, order confirmed, order status changed).
+- Conditions can check `order.status`, `order.previous_status`, `order.event`, `order.courier` and `order.payment_method`; message fields offer `{{order.*}}` insert chips.
+
 ## 1.8.0 — 2026-10-04
 
 - New action **Campaign details**: finds the campaign named in the message (or in "Campaign to look up") and gives later steps `{{campaign.summary}}`, `{{campaign.name}}`, `{{campaign.status}}`, `{{campaign.total}}`, `{{campaign.sent}}`, `{{campaign.failed}}`, `{{campaign.waiting}}` and `{{campaign.started}}`.
