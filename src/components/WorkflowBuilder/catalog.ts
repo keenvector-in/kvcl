@@ -47,6 +47,7 @@ const conditionFields: WorkflowField[] = [
       { value: 'contact.name', label: 'Contact name' },
       { value: 'contact.email', label: 'Contact email' },
       { value: 'contact.phone', label: 'Contact phone' },
+      { value: 'contact.instagram_handle', label: 'Contact Instagram @username' },
       { value: 'order.status', label: 'Order status (KeenPlaza)' },
       { value: 'order.previous_status', label: 'Previous order status' },
       { value: 'order.event', label: 'Order event' },
@@ -75,7 +76,7 @@ const orderVariableNames = ['order.number', 'order.status_label', 'order.status'
 
 const messageVariables = {
   field: 'message',
-  names: ['contact.name', 'contact.email', 'contact.phone', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address', ...campaignVariableNames, ...orderVariableNames],
+  names: ['contact.name', 'contact.email', 'contact.phone', 'contact.instagram', 'contact.instagram_handle', 'message.body', 'message.from', 'contact.verify_code', 'contact.claim_address', ...campaignVariableNames, ...orderVariableNames],
 };
 
 const textMessageFields: WorkflowField[] = [
@@ -218,7 +219,16 @@ const specs: WorkflowNodeSpec[] = [
     variables: messageVariables,
     defaults: { channel: '#sales', message: '' },
   },
-  { type: 'send_instagram', label: 'Send Instagram', kind: 'action', preview: true, fields: textMessageFields, defaults: { to: '{{message.from}}', message: '' } },
+  {
+    type: 'send_instagram',
+    label: 'Send Instagram',
+    kind: 'action',
+    fields: [{ key: 'to', label: 'Send to', placeholder: '{{contact.instagram}}' }, textMessageFields[1]],
+    variables: messageVariables,
+    // Empty "to": the sender on an Instagram DM, else the contact's linked Instagram account.
+    defaults: { to: '', message: '' },
+    help: 'Instagram lets a business DM only people who messaged it, within 24 hours of their last message. From another channel it reaches the contact\'s linked Instagram account.',
+  },
   {
     type: 'ask_ai_agent',
     label: 'Ask AI',

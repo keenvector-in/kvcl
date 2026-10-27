@@ -1,5 +1,11 @@
 # WorkflowBuilder changelog
 
+## 1.10.0 — 2026-10-27
+
+- Messages offer `{{contact.instagram}}` (the id a DM goes to, once the person has messaged your Instagram) and `{{contact.instagram_handle}}` (their @username). A workflow started on WhatsApp can reach the same person with Send Instagram, `To: {{contact.instagram}}`.
+- **Send Instagram** is no longer a "Soon" preview step. Left empty, *Send to* is the sender of an Instagram DM, or the contact's linked Instagram account when the workflow started on another channel.
+- Conditions can check the contact's Instagram @username.
+
 ## 1.9.0 — 2026-10-10
 
 - **Webhook** trigger is runnable: it starts on a linked KeenPlaza store's order events, with settings *From* (KeenPlaza store) and *Event* (any, order confirmed, order status changed).
