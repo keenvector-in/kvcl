@@ -1,5 +1,10 @@
 # WorkflowBuilder changelog
 
+## 1.11.0 — 2026-11-09
+
+- New **Comment Received** trigger: starts on a comment on your Instagram posts, optionally only on one post or for comments containing a keyword.
+- New **Reply to Comment** (public) and **Private Reply** (one DM per comment) steps.
+
 ## 1.10.0 — 2026-10-27
 
 - Messages offer `{{contact.instagram}}` (the id a DM goes to, once the person has messaged your Instagram) and `{{contact.instagram_handle}}` (their @username). A workflow started on WhatsApp can reach the same person with Send Instagram, `To: {{contact.instagram}}`.

@@ -176,6 +176,17 @@ const specs: WorkflowNodeSpec[] = [
   simpleTrigger('payment_received', 'Payment Received'),
   simpleTrigger('form_submitted', 'Form Submitted', 'Starts when a visitor sends your website\'s contact form. {{message.body}} is their message, {{contact.name}}/{{contact.email}}/{{contact.phone}} what they typed; use Send WhatsApp to reach them.'),
   simpleTrigger('chatbot_message', 'Chatbot Message', 'Starts on every message in your website chat. Reply answers in the chat.'),
+  {
+    type: 'comment_received',
+    label: 'Comment Received',
+    kind: 'trigger',
+    fields: [
+      { key: 'media_id', label: 'Only this post (ID)', placeholder: 'Leave empty for every post' },
+      { key: 'keyword', label: 'Only comments containing', placeholder: 'Leave empty for every comment' },
+    ],
+    defaults: { media_id: '', keyword: '' },
+    help: 'Starts on a comment on your Instagram posts. {{message.body}} is the comment. Answer it with Reply to Comment and Private Reply.',
+  },
 
   {
     type: 'reply',
@@ -185,6 +196,24 @@ const specs: WorkflowNodeSpec[] = [
     variables: messageVariables,
     defaults: { message: '' },
     help: 'Answers on the same channel the message came in on — WhatsApp, Instagram, SMS… whichever the workflow is linked to.',
+  },
+  {
+    type: 'reply_comment',
+    label: 'Reply to Comment',
+    kind: 'action',
+    fields: [{ key: 'message', label: 'What should the public reply say?', placeholder: 'Thanks! Please check your DM for details', multiline: true }],
+    variables: messageVariables,
+    defaults: { message: '' },
+    help: 'Replies publicly under the comment. Works only after Comment Received.',
+  },
+  {
+    type: 'private_reply',
+    label: 'Private Reply',
+    kind: 'action',
+    fields: [{ key: 'message', label: 'What should the DM say?', placeholder: 'Thanks for your comment! Reply here and we\'ll send the details.', multiline: true }],
+    variables: messageVariables,
+    defaults: { message: '' },
+    help: 'Sends the commenter a DM. Instagram allows one per comment, within 7 days of it. Works only after Comment Received; when they write back, an Incoming Message workflow takes over.',
   },
   { type: 'send_sms', label: 'Send SMS', kind: 'action', preview: true, fields: textMessageFields, defaults: { to: '{{message.from}}', message: '' } },
   {
